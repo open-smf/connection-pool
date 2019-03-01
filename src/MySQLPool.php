@@ -11,7 +11,7 @@ class MySQLPool extends ConnectionPool
         $mysql = new MySQL();
         $ret = $mysql->connect($config);
         if ($ret === false) {
-            throw new \RuntimeException(sprintf('Failed to connect mysql server [%d]%s', $mysql->connect_errno, $mysql->connect_error));
+            throw new \RuntimeException(sprintf('Failed to connect MySQL server [%d]%s', $mysql->connect_errno, $mysql->connect_error));
         }
         return new Connection($mysql);
     }

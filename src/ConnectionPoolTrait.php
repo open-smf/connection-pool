@@ -4,7 +4,9 @@ namespace Smf\ConnectionPool;
 
 trait ConnectionPoolTrait
 {
-    /**@var []ConnectionPool Connection pools */
+    /**
+     * @var ConnectionPool[] $pools
+     */
     protected $pools = [];
 
     public function addConnectionPool($key, ConnectionPool $pool)

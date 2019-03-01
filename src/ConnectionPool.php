@@ -6,12 +6,9 @@ use Swoole\Coroutine\Channel;
 
 abstract class ConnectionPool implements ConnectionPoolInterface
 {
-    /**
-     * @var \Swoole\Coroutine\Channel
-     */
     protected $pool;
 
-    public function __construct(array $config, int $size = 100)
+    public function __construct(array $config, int $size)
     {
         $this->pool = new Channel($size);
         for ($i = 0; $i < $size; $i++) {
