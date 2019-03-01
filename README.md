@@ -1,2 +1,2 @@
 # Connection pool
-The implementation of the connection pool is generally used as a database connection pool.
+A common connection pool based on Swoole, usually used as a database connection pool.
