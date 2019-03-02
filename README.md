@@ -21,7 +21,7 @@ composer require "open-smf/connection-pool"
 ```php
 include '../vendor/autoload.php';
 
-use Smf\ConnectionPool\ConnectionPool;
+use Smf\ConnectionPool\ConnectionPoolTrait;
 use Smf\ConnectionPool\MySQLPool;
 use Smf\ConnectionPool\RedisPool;
 use Swoole\Coroutine\MySQL;
@@ -31,21 +31,20 @@ use Swoole\Http\Server;
 
 class HttpServer
 {
+    use ConnectionPoolTrait;
+
     protected $swoole;
 
-    /**@var ConnectionPool[] */
-    protected $pools = [];
-
-    public function __construct($host, $port)
+    public function __construct(string $host, int $port)
     {
         $this->swoole = new Server($host, $port);
 
-        $this->set();
+        $this->setDefault();
         $this->bindWorkerEvents();
         $this->bindHttpEvent();
     }
 
-    protected function set()
+    protected function setDefault()
     {
         $this->swoole->set([
             'daemonize'             => false,
@@ -66,17 +65,19 @@ class HttpServer
     protected function bindHttpEvent()
     {
         $this->swoole->on('Request', function (Request $request, Response $response) {
+            $pool1 = $this->getConnectionPool('mysql');
             /**@var MySQL $mysql */
-            $mysql = $this->pools['mysql']->borrow();
-            defer(function () use ($mysql) {
-                $this->pools['mysql']->return($mysql);
+            $mysql = $pool1->borrow();
+            defer(function () use ($pool1, $mysql) {
+                $pool1->return($mysql);
             });
             $status = $mysql->query('SHOW STATUS LIKE \'Threads_connected\'');
 
 
+            $pool2 = $this->getConnectionPool('redis');
             /**@var Redis $redis */
-            $redis = $this->pools['redis']->borrow();
-            defer(function () use ($redis) {
+            $redis = $pool2->borrow();
+            defer(function () use ($pool2, $redis) {
                 $this->pools['redis']->return($redis);
             });
             $clients = $redis->info('Clients');
@@ -106,7 +107,7 @@ class HttpServer
                 'strict_type' => true,
                 'fetch_mode'  => true,
             ]);
-            $this->pools['mysql'] = $pool1;
+            $this->addConnectionPool('mysql', $pool1);
 
             // All Redis connections: [4*2, 4*10]
             $pool2 = new RedisPool(2, 10, 5);
@@ -116,12 +117,10 @@ class HttpServer
                 'database' => 0,
                 'password' => null,
             ]);
-            $this->pools['redis'] = $pool2;
+            $this->addConnectionPool('redis', $pool2);
         };
         $closePools = function () {
-            foreach ($this->pools as $pool) {
-                $pool->close();
-            }
+            $this->closeConnectionPools();
         };
         $this->swoole->on('WorkerStart', $createPools);
         $this->swoole->on('WorkerStop', $closePools);
