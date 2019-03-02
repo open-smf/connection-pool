@@ -2,8 +2,6 @@
 
 namespace Smf\ConnectionPool;
 
-use Smf\ConnectionPool\Connections\Connection;
-use Smf\ConnectionPool\Connections\PhpRedisConnection;
 use Smf\ConnectionPool\Connectors\ConnectorInterface;
 use Smf\ConnectionPool\Connectors\PhpRedisConnector;
 
@@ -18,9 +16,8 @@ class PhpRedisPool extends ConnectionPool
         return $connector;
     }
 
-    protected function createConnection(array $config): Connection
+    protected function createConnection(array $config)
     {
-        $rawConnection = $this->createConnector()->connect($config);
-        return new PhpRedisConnection($rawConnection);
+        return $this->createConnector()->connect($config);
     }
 }

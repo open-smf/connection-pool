@@ -2,8 +2,6 @@
 
 namespace Smf\ConnectionPool;
 
-use Smf\ConnectionPool\Connections\Connection;
-use Smf\ConnectionPool\Connections\CoroutineMySQLConnection;
 use Smf\ConnectionPool\Connectors\ConnectorInterface;
 use Smf\ConnectionPool\Connectors\CoroutineMySQLConnector;
 
@@ -18,9 +16,8 @@ class CoroutineMySQLPool extends ConnectionPool
         return $connector;
     }
 
-    protected function createConnection(array $config): Connection
+    protected function createConnection(array $config)
     {
-        $rawConnection = $this->createConnector()->connect($config);
-        return new CoroutineMySQLConnection($rawConnection);
+        return $this->createConnector()->connect($config);
     }
 }

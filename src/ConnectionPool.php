@@ -2,7 +2,6 @@
 
 namespace Smf\ConnectionPool;
 
-use Smf\ConnectionPool\Connections\Connection;
 use Smf\ConnectionPool\Connectors\ConnectorInterface;
 use Swoole\Coroutine\Channel;
 
@@ -61,11 +60,20 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         }
     }
 
+    /**
+     * Create the connector to create the connection
+     * @return ConnectorInterface
+     */
     abstract protected function createConnector(): ConnectorInterface;
 
-    abstract protected function createConnection(array $config): Connection;
+    /**
+     * Create the connection
+     * @param array $config
+     * @return mixed Return the connection resource
+     */
+    abstract protected function createConnection(array $config);
 
-    public function return(Connection $connection): bool
+    public function return($connection): bool
     {
         $sub = $this->pool->length() - $this->minSize;
         if ($sub === 0) {
@@ -79,7 +87,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         }
     }
 
-    public function borrow(): Connection
+    public function borrow()
     {
         if ($this->pool->isEmpty()) {
             $add = $this->maxSize - $this->currentSize;
