@@ -7,7 +7,7 @@ A common connection pool based on Swoole is usually used as the database connect
 | Dependency | Requirement |
 | -------- | -------- |
 | [PHP](https://secure.php.net/manual/en/install.php) | `>=7.0.0` |
-| [Swoole](https://www.swoole.com/) | `>=2.0.13` `Recommend 4.2.13+` |
+| [Swoole](https://www.swoole.com/) | `>=4.2.9` `Recommend 4.2.13+` |
 
 ## Install
 > Install package via [Composer](https://getcomposer.org/).

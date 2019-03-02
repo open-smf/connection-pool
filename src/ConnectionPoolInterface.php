@@ -4,9 +4,30 @@ namespace Smf\ConnectionPool;
 
 interface ConnectionPoolInterface
 {
-    public function put(Connection $connection): bool;
 
-    public function get(float $timeout = 0): Connection;
+    /**
+     * Initialize the connection pool
+     * @param array $config The configurations of connection
+     */
+    public function init(array $config);
 
+    /**
+     * Return a connection to the connection pool
+     * @param Connection $connection
+     * @return bool
+     */
+    public function return(Connection $connection): bool;
+
+    /**
+     * Borrow a connection to the connection pool
+     * @return Connection
+     * @throws GetConnectionTimeoutException
+     */
+    public function borrow(): Connection;
+
+    /**
+     * Close the connection pool
+     * @return bool
+     */
     public function close(): bool;
 }

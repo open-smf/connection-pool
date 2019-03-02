@@ -16,6 +16,11 @@ class Connection
         return $this->rawConnection;
     }
 
+    public function __get($name)
+    {
+        return $this->rawConnection->{$name} ?? null;
+    }
+
     public function __call($name, array $arguments)
     {
         return call_user_func_array([$this->rawConnection, $name], $arguments);

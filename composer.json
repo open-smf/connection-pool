@@ -21,10 +21,11 @@
   ],
   "require": {
     "php": ">=7.0.0",
-    "ext-json": "*"
+    "ext-json": "*",
+    "ext-swoole": ">=4.2.9"
   },
   "suggest": {
-    "ext-swoole": "Swoole is an event-driven asynchronous & coroutine-based concurrency networking communication engine with high performance written in C and C++ for PHP."
+    "ext-redis": "A PHP extension for Redis."
   },
   "autoload": {
     "psr-4": {

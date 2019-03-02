@@ -9,17 +9,17 @@ trait ConnectionPoolTrait
      */
     protected $pools = [];
 
-    public function addConnectionPool($key, ConnectionPool $pool)
+    public function addConnectionPool(string $key, ConnectionPool $pool)
     {
         $this->pools[$key] = $pool;
     }
 
-    public function getConnectionPool($key): ConnectionPool
+    public function getConnectionPool(string $key): ConnectionPool
     {
         return $this->pools[$key];
     }
 
-    public function closeConnectionPool($key)
+    public function closeConnectionPool(string $key)
     {
         return $this->pools[$key]->close();
     }

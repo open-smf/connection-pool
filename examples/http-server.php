@@ -48,28 +48,24 @@ class HttpServer
     protected function bindHttpEvent()
     {
         $this->swoole->on('Request', function (Request $request, Response $response) {
-            /**
-             * @var MySQL $mysql
-             */
-            $mysql = $this->pools['mysql']->get();
+            /**@var MySQL $mysql */
+            $mysql = $this->pools['mysql']->borrow();
             defer(function () use ($mysql) {
-                $this->pools['mysql']->put($mysql);
+                $this->pools['mysql']->return($mysql);
             });
-            $now = $mysql->query('select now()');
+            $status = $mysql->query('SHOW STATUS LIKE \'Threads_connected\'');
 
 
-            /**
-             * @var Redis $redis
-             */
-            $redis = $this->pools['redis']->get();
+            /**@var Redis $redis */
+            $redis = $this->pools['redis']->borrow();
             defer(function () use ($redis) {
-                $this->pools['redis']->put($redis);
+                $this->pools['redis']->return($redis);
             });
-            $info = $redis->info('Memory');
+            $clients = $redis->info('Clients');
 
             $json = [
-                'now'  => $now,
-                'info' => $info,
+                'status'  => $status,
+                'clients' => $clients,
             ];
             $response->header('Content-Type', 'application/json');
             $response->end(json_encode($json));
@@ -78,8 +74,10 @@ class HttpServer
 
     protected function bindWorkerEvents()
     {
-        $createPool = function () {
-            $this->pools['mysql'] = new MySQLPool([
+        $createPools = function () {
+            // All MySQL connections: [4*2, 4*10]
+            $pool1 = new MySQLPool(2, 10, 5);
+            $pool1->init([
                 'host'        => '127.0.0.1',
                 'port'        => '3306',
                 'user'        => 'root',
@@ -89,24 +87,28 @@ class HttpServer
                 'charset'     => 'utf8mb4',
                 'strict_type' => true,
                 'fetch_mode'  => true,
-            ], 10);
+            ]);
+            $this->pools['mysql'] = $pool1;
 
-            $this->pools['redis'] = new RedisPool([
+            // All MySQL connections: [4*2, 4*10]
+            $pool2 = new RedisPool(2, 10, 5);
+            $pool2->init([
                 'host'     => '127.0.0.1',
                 'port'     => '6379',
                 'database' => 0,
                 'password' => null,
-            ], 10);
+            ]);
+            $this->pools['redis'] = $pool2;
         };
-        $closePool = function () {
+        $closePools = function () {
             foreach ($this->pools as $pool) {
                 $pool->close();
             }
         };
-        $this->swoole->on('WorkerStart', $createPool);
-        $this->swoole->on('WorkerStop', $closePool);
-        $this->swoole->on('WorkerExit', $closePool);
-        $this->swoole->on('WorkerError', $closePool);
+        $this->swoole->on('WorkerStart', $createPools);
+        $this->swoole->on('WorkerStop', $closePools);
+        $this->swoole->on('WorkerExit', $closePools);
+        $this->swoole->on('WorkerError', $closePools);
     }
 
     public function start()
