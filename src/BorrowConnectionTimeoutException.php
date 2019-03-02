@@ -2,7 +2,7 @@
 
 namespace Smf\ConnectionPool;
 
-class GetConnectionTimeoutException extends \Exception
+class BorrowConnectionTimeoutException extends \Exception
 {
     protected $timeout;
 

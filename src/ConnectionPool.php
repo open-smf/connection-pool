@@ -2,12 +2,14 @@
 
 namespace Smf\ConnectionPool;
 
+use Smf\ConnectionPool\Connections\Connection;
+use Smf\ConnectionPool\Connectors\ConnectorInterface;
 use Swoole\Coroutine\Channel;
 
 abstract class ConnectionPool implements ConnectionPoolInterface
 {
-    protected $pool;
-    protected $config;
+    protected        $pool;
+    protected        $config;
 
     protected $currentSize = 0;
     protected $minSize     = 1;
@@ -59,6 +61,8 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         }
     }
 
+    abstract protected function createConnector(): ConnectorInterface;
+
     abstract protected function createConnection(array $config): Connection;
 
     public function return(Connection $connection): bool
@@ -85,7 +89,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         }
         $conn = $this->pool->pop($this->timeout);
         if ($conn === false) {
-            $exception = new GetConnectionTimeoutException(sprintf('Get the connection timeout in %.2f(s)', $this->timeout));
+            $exception = new BorrowConnectionTimeoutException(sprintf('Get the connection timeout in %.2f(s)', $this->timeout));
             $exception->setTimeout($this->timeout);
             throw $exception;
         }

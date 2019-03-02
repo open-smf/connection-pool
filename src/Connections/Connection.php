@@ -1,8 +1,8 @@
 <?php
 
-namespace Smf\ConnectionPool;
+namespace Smf\ConnectionPool\Connections;
 
-class Connection
+abstract class Connection
 {
     protected $rawConnection;
 
@@ -15,6 +15,12 @@ class Connection
     {
         return $this->rawConnection;
     }
+
+    /**
+     * Close the connection
+     * @return bool
+     */
+    abstract public function close(): bool;
 
     public function __get($name)
     {

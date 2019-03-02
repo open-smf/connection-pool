@@ -2,6 +2,8 @@
 
 namespace Smf\ConnectionPool;
 
+use Smf\ConnectionPool\Connections\Connection;
+
 interface ConnectionPoolInterface
 {
 
@@ -21,7 +23,7 @@ interface ConnectionPoolInterface
     /**
      * Borrow a connection to the connection pool
      * @return Connection
-     * @throws GetConnectionTimeoutException
+     * @throws BorrowConnectionTimeoutException
      */
     public function borrow(): Connection;
 
