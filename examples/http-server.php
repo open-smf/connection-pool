@@ -13,9 +13,7 @@ class HttpServer
 {
     protected $swoole;
 
-    /**
-     * @var ConnectionPool[]
-     */
+    /**@var ConnectionPool[] */
     protected $pools = [];
 
     public function __construct($host, $port)
