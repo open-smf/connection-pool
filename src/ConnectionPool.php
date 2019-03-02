@@ -40,10 +40,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         $this->currentSize += $count;
         for ($i = 0; $i < $count; $i++) {
             $conn = $this->createConnection($this->config);
-            $ret = $this->return($conn);
-            if ($ret === false) {
-                throw new \RuntimeException(sprintf('Failed to push connection into channel: %s', $this->pool->errCode));
-            }
+            $this->return($conn);
         }
     }
 
@@ -51,7 +48,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
     {
         for ($i = 0; $i < $count; $i++) {
             if ($this->pool->isEmpty()) {
-                return;
+                break;
             }
             $conn = $this->pool->pop(0.001);
             if ($conn !== false) {
@@ -75,15 +72,18 @@ abstract class ConnectionPool implements ConnectionPoolInterface
 
     public function return($connection): bool
     {
-        $sub = $this->pool->length() - $this->minSize;
+        $sub = $this->currentSize - $this->maxSize;
         if ($sub === 0) {
-            // todo close connection
             return false;
         } elseif ($sub > 0) {
             $this->removeConnections($sub);
             return false;
         } else {
-            return $this->pool->push($connection);
+            $ret = $this->pool->push($connection);
+            if ($ret === false) {
+                throw new \RuntimeException(sprintf('Failed to push connection into channel: %s', $this->pool->errCode));
+            }
+            return true;
         }
     }
 
@@ -102,6 +102,11 @@ abstract class ConnectionPool implements ConnectionPoolInterface
             throw $exception;
         }
         return $conn;
+    }
+
+    public function getCurrentSize(): int
+    {
+        return $this->currentSize;
     }
 
     public function close(): bool
