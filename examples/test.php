@@ -9,7 +9,7 @@ go(function () {
     // All MySQL connections: [10, 20]
     $pool = new CoroutineMySQLPool(10, 20, 5);
     $pool->init([
-        'host'        => 'mysql',
+        'host'        => '127.0.0.1',
         'port'        => '3306',
         'user'        => 'root',
         'password'    => 'xy123456',
