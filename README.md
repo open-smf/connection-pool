@@ -22,8 +22,8 @@ composer require "open-smf/connection-pool"
 include '../vendor/autoload.php';
 
 use Smf\ConnectionPool\ConnectionPoolTrait;
-use Smf\ConnectionPool\MySQLPool;
-use Smf\ConnectionPool\RedisPool;
+use Smf\ConnectionPool\CoroutineMySQLPool;
+use Smf\ConnectionPool\PhpRedisPool;
 use Swoole\Coroutine\MySQL;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
@@ -95,7 +95,7 @@ class HttpServer
     {
         $createPools = function () {
             // All MySQL connections: [4*2, 4*10]
-            $pool1 = new MySQLPool(2, 10, 5);
+            $pool1 = new CoroutineMySQLPool(2, 10, 5);
             $pool1->init([
                 'host'        => '127.0.0.1',
                 'port'        => '3306',
@@ -110,7 +110,7 @@ class HttpServer
             $this->addConnectionPool('mysql', $pool1);
 
             // All Redis connections: [4*2, 4*10]
-            $pool2 = new RedisPool(2, 10, 5);
+            $pool2 = new PhpRedisPool(2, 10, 5);
             $pool2->init([
                 'host'     => '127.0.0.1',
                 'port'     => '6379',
