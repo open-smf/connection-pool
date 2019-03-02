@@ -90,7 +90,7 @@ class HttpServer
             ]);
             $this->pools['mysql'] = $pool1;
 
-            // All MySQL connections: [4*2, 4*10]
+            // All Redis connections: [4*2, 4*10]
             $pool2 = new RedisPool(2, 10, 5);
             $pool2->init([
                 'host'     => '127.0.0.1',
