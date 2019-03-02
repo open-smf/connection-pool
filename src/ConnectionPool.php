@@ -8,8 +8,8 @@ use Swoole\Coroutine\Channel;
 
 abstract class ConnectionPool implements ConnectionPoolInterface
 {
-    protected        $pool;
-    protected        $config;
+    protected $pool;
+    protected $config;
 
     protected $currentSize = 0;
     protected $minSize     = 1;
@@ -89,7 +89,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         }
         $conn = $this->pool->pop($this->timeout);
         if ($conn === false) {
-            $exception = new BorrowConnectionTimeoutException(sprintf('Get the connection timeout in %.2f(s)', $this->timeout));
+            $exception = new BorrowConnectionTimeoutException(sprintf('Borrow the connection timeout in %.2f(s)', $this->timeout));
             $exception->setTimeout($this->timeout);
             throw $exception;
         }
