@@ -2,16 +2,17 @@
 
 namespace Smf\ConnectionPool\Connectors;
 
+use Smf\ConnectionPool\Connection;
 use Swoole\Coroutine\MySQL;
 
 class CoroutineMySQLConnector implements ConnectorInterface
 {
-    public function connect(array $config): MySQL
+    public function connect(array $config): Connection
     {
-        $connection = new MySQL();
-        if ($connection->connect($config) === false) {
-            throw new \RuntimeException(sprintf('Failed to connect MySQL server [%d]%s', $connection->connect_errno, $connection->connect_error));
+        $raw = new MySQL();
+        if ($raw->connect($config) === false) {
+            throw new \RuntimeException(sprintf('Failed to connect MySQL server [%d]%s', $raw->connect_errno, $raw->connect_error));
         }
-        return $connection;
+        return new Connection($raw);
     }
 }

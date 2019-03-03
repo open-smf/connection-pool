@@ -16,7 +16,7 @@ class CoroutineMySQLPool extends ConnectionPool
         return $connector;
     }
 
-    protected function createConnection(array $config)
+    protected function createConnection(array $config): Connection
     {
         return $this->createConnector()->connect($config);
     }
