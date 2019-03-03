@@ -3,7 +3,6 @@
 namespace Smf\ConnectionPool;
 
 use Smf\ConnectionPool\Connectors\ConnectorInterface;
-use Swoole\Atomic;
 use Swoole\Coroutine\Channel;
 
 abstract class ConnectionPool implements ConnectionPoolInterface
@@ -13,10 +12,10 @@ abstract class ConnectionPool implements ConnectionPoolInterface
     protected $pool;
     protected $config;
 
-    protected $currentSize;
-    protected $minSize = 1;
-    protected $maxSize = 1;
-    protected $timeout = 5;
+    protected $currentSize = 0;
+    protected $minSize     = 1;
+    protected $maxSize     = 1;
+    protected $timeout     = 5;
 
     /**
      * ConnectionPool constructor.
@@ -30,7 +29,6 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         $this->maxSize = $maxSize;
         $this->timeout = $timeout;
         $this->pool = new Channel($this->maxSize);
-        $this->currentSize = new Atomic(0);
     }
 
     public function init(array $config)
@@ -42,14 +40,14 @@ abstract class ConnectionPool implements ConnectionPoolInterface
     protected function addConnections(int $count): bool
     {
         for ($i = 0; $i < $count; $i++) {
-            if ($this->currentSize->get() >= $this->maxSize) {
+            if ($this->currentSize >= $this->maxSize) {
                 return false;
             }
-            $this->currentSize->add(1);
+            $this->currentSize++;
             $connection = $this->createConnection($this->config);
             $ret = $this->pool->push($connection, static::CHANNEL_TIMEOUT);
             if ($ret === false) {
-                $this->currentSize->sub(1);
+                $this->currentSize--;
             }
         }
         return true;
@@ -76,7 +74,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         }
         $ret = $this->pool->push($connection, static::CHANNEL_TIMEOUT);
         if ($ret === false) {
-            $this->currentSize->sub(1);
+            $this->currentSize--;
         }
         return $ret;
     }
@@ -98,7 +96,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
 
     public function getCurrentSize(): int
     {
-        return $this->currentSize->get();
+        return $this->currentSize;
     }
 
     public function close(): bool
