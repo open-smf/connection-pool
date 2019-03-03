@@ -73,6 +73,10 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         $now = time();
         $validConnections = [];
         while (true) {
+            if ($this->currentCount <= $this->minActive) {
+                break;
+            }
+
             /**@var Connection $connection */
             $connection = $this->pool->pop(static::CHANNEL_TIMEOUT);
             if ($connection === false) {
