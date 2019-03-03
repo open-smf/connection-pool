@@ -76,18 +76,13 @@ abstract class ConnectionPool implements ConnectionPoolInterface
             /**@var Connection $connection */
             $connection = $this->pool->pop(static::CHANNEL_TIMEOUT);
             if ($connection === false) {
-                var_dump('exit clear');
                 break;
             }
             $lastActiveTime = $connection->getLastActiveTime();
-            if ($lastActiveTime === 0) {
-                continue;
-            }
-            $this->currentCount--;
             if ($now - $lastActiveTime < $this->maxIdleTime) {
                 $validConnections[] = $connection;
             } else {
-                var_dump(__METHOD__);
+                $this->currentCount--;
             }
         }
 
