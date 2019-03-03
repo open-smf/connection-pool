@@ -3,17 +3,20 @@
 namespace Smf\ConnectionPool;
 
 use Smf\ConnectionPool\Connectors\ConnectorInterface;
+use Swoole\Atomic;
 use Swoole\Coroutine\Channel;
 
 abstract class ConnectionPool implements ConnectionPoolInterface
 {
+    const CHANNEL_TIMEOUT = 0.001;
+
     protected $pool;
     protected $config;
 
-    protected $currentSize = 0;
-    protected $minSize     = 1;
-    protected $maxSize     = 1;
-    protected $timeout     = 5;
+    protected $currentSize;
+    protected $minSize = 1;
+    protected $maxSize = 1;
+    protected $timeout = 5;
 
     /**
      * ConnectionPool constructor.
@@ -27,6 +30,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         $this->maxSize = $maxSize;
         $this->timeout = $timeout;
         $this->pool = new Channel($this->maxSize);
+        $this->currentSize = new Atomic(0);
     }
 
     public function init(array $config)
@@ -35,26 +39,20 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         $this->addConnections($this->minSize);
     }
 
-    protected function addConnections(int $count)
-    {
-        $this->currentSize += $count;
-        for ($i = 0; $i < $count; $i++) {
-            $conn = $this->createConnection($this->config);
-            $this->return($conn);
-        }
-    }
-
-    protected function removeConnections(int $count)
+    protected function addConnections(int $count): bool
     {
         for ($i = 0; $i < $count; $i++) {
-            if ($this->pool->isEmpty()) {
-                break;
+            if ($this->currentSize->get() >= $this->maxSize) {
+                return false;
             }
-            $conn = $this->pool->pop(0.001);
-            if ($conn !== false) {
-                $this->currentSize--;
+            $this->currentSize->add(1);
+            $connection = $this->createConnection($this->config);
+            $ret = $this->pool->push($connection, static::CHANNEL_TIMEOUT);
+            if ($ret === false) {
+                $this->currentSize->sub(1);
             }
         }
+        return true;
     }
 
     /**
@@ -72,41 +70,35 @@ abstract class ConnectionPool implements ConnectionPoolInterface
 
     public function return($connection): bool
     {
-        $sub = $this->currentSize - $this->maxSize;
-        if ($sub === 0) {
+        if ($this->pool->isFull()) {
+            // Discard the connection
             return false;
-        } elseif ($sub > 0) {
-            $this->removeConnections($sub);
-            return false;
-        } else {
-            $ret = $this->pool->push($connection);
-            if ($ret === false) {
-                throw new \RuntimeException(sprintf('Failed to push connection into channel: %s', $this->pool->errCode));
-            }
-            return true;
         }
+        $ret = $this->pool->push($connection, static::CHANNEL_TIMEOUT);
+        if ($ret === false) {
+            $this->currentSize->sub(1);
+        }
+        return $ret;
     }
 
     public function borrow()
     {
         if ($this->pool->isEmpty()) {
-            $add = $this->maxSize - $this->currentSize;
-            if ($add > 0) {
-                $this->addConnections($add);
-            }
+            // Create more connections then add them to pool
+            $this->addConnections(1);
         }
-        $conn = $this->pool->pop($this->timeout);
-        if ($conn === false) {
+        $connection = $this->pool->pop($this->timeout);
+        if ($connection === false) {
             $exception = new BorrowConnectionTimeoutException(sprintf('Borrow the connection timeout in %.2f(s)', $this->timeout));
             $exception->setTimeout($this->timeout);
             throw $exception;
         }
-        return $conn;
+        return $connection;
     }
 
     public function getCurrentSize(): int
     {
-        return $this->currentSize;
+        return $this->currentSize->get();
     }
 
     public function close(): bool
