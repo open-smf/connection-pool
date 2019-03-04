@@ -5,7 +5,7 @@ namespace Smf\ConnectionPool;
 use Smf\ConnectionPool\Connectors\ConnectorInterface;
 use Swoole\Coroutine\Channel;
 
-abstract class ConnectionPool implements ConnectionPoolInterface
+class ConnectionPool implements ConnectionPoolInterface
 {
     /**@var float The timeout of the operation channel */
     const CHANNEL_TIMEOUT = 0.001;
@@ -18,6 +18,9 @@ abstract class ConnectionPool implements ConnectionPoolInterface
 
     /**@var Channel The connection pool */
     protected $pool;
+
+    /**@var ConnectorInterface The connector */
+    protected $connector;
 
     /**@var array The config of connection */
     protected $connectionConfig;
@@ -51,9 +54,10 @@ abstract class ConnectionPool implements ConnectionPoolInterface
      * float maxWaitTime The maximum waiting time for connection, when reached, an exception will be thrown
      * float maxIdleTime The maximum idle time for the connection, when reached, the connection will be removed from pool, and keep the least $minActive connections in the pool
      * float idleCheckInterval The interval to check idle connection
+     * @param ConnectorInterface $connector The connector instance of ConnectorInterface
      * @param array $connectionConfig The config of connection
      */
-    public function __construct(array $poolConfig, array $connectionConfig)
+    public function __construct(array $poolConfig, ConnectorInterface $connector, array $connectionConfig)
     {
         $this->minActive = $poolConfig['minActive'] ?? 20;
         $this->maxActive = $poolConfig['maxActive'] ?? 100;
@@ -62,6 +66,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         $poolConfig['idleCheckInterval'] = $poolConfig['idleCheckInterval'] ?? 15;
         $this->idleCheckInterval = $poolConfig['idleCheckInterval'] >= static::MIN_CHECK_IDLE_INTERVAL ? $poolConfig['idleCheckInterval'] : static::MIN_CHECK_IDLE_INTERVAL;
         $this->connectionConfig = $connectionConfig;
+        $this->connector = $connector;
     }
 
     /**
@@ -110,10 +115,9 @@ abstract class ConnectionPool implements ConnectionPoolInterface
             $exception->setTimeout($this->maxWaitTime);
             throw $exception;
         }
-        $connector = $this->getConnector();
-        if ($connector->isConnected($connection)) {
+        if ($this->connector->isConnected($connection)) {
             // Reset the connection for the connected connection
-            $connector->reset($connection, $this->connectionConfig);
+            $this->connector->reset($connection, $this->connectionConfig);
         } else {
             // Remove the disconnected connection, then create a new connection
             $this->removeConnection($connection);
@@ -166,7 +170,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
             }
             $connection = $this->pool->pop(static::CHANNEL_TIMEOUT);
             if ($connection !== false) {
-                $this->getConnector()->disconnect($connection);
+                $this->connector->disconnect($connection);
             }
         }
         $this->pool->close();
@@ -212,26 +216,10 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         });
     }
 
-    protected function getConnector(): ConnectorInterface
-    {
-        static $connector = null;
-        if ($connector === null) {
-            $connector = $this->getConnectorClass();
-            $connector = new $connector();
-        }
-        return $connector;
-    }
-
-    /**
-     * Specify the class name of the connector.
-     * @return string
-     */
-    abstract protected function getConnectorClass(): string;
-
     protected function createConnection()
     {
         $this->connectionCount++;
-        $connection = $this->getConnector()->connect($this->connectionConfig);
+        $connection = $this->connector->connect($this->connectionConfig);
         $connection->{static::KEY_LAST_ACTIVE_TIME} = time();
         return $connection;
     }
@@ -241,7 +229,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         $this->connectionCount--;
         go(function () use ($connection) {
             try {
-                $this->getConnector()->disconnect($connection);
+                $this->connector->disconnect($connection);
             } catch (\Throwable $e) {
                 // Ignore this exception.
             }

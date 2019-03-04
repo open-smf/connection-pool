@@ -23,13 +23,14 @@ composer require "open-smf/connection-pool"
 ```php
 include '../vendor/autoload.php';
 
-use Smf\ConnectionPool\CoroutineMySQLPool;
+use Smf\ConnectionPool\ConnectionPool;
+use Smf\ConnectionPool\Connectors\CoroutineMySQLConnector;
 use Swoole\Coroutine;
 use Swoole\Coroutine\MySQL;
 
 go(function () {
     // All MySQL connections: [10, 30]
-    $pool = new CoroutineMySQLPool(
+    $pool = new ConnectionPool(
         [
             'minActive'         => 10,
             'maxActive'         => 30,
@@ -37,6 +38,7 @@ go(function () {
             'maxIdleTime'       => 20,
             'idleCheckInterval' => 10,
         ],
+        new CoroutineMySQLConnector,
         [
             'host'        => '127.0.0.1',
             'port'        => '3306',
@@ -87,9 +89,10 @@ go(function () {
 ```php
 include '../vendor/autoload.php';
 
+use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\ConnectionPoolTrait;
-use Smf\ConnectionPool\CoroutineMySQLPool;
-use Smf\ConnectionPool\PhpRedisPool;
+use Smf\ConnectionPool\Connectors\CoroutineMySQLConnector;
+use Smf\ConnectionPool\Connectors\PhpRedisConnector;
 use Swoole\Coroutine\MySQL;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
@@ -161,11 +164,12 @@ class HttpServer
     {
         $createPools = function () {
             // All MySQL connections: [4 workers * 2 = 8, 4 workers * 10 = 40]
-            $pool1 = new CoroutineMySQLPool(
+            $pool1 = new ConnectionPool(
                 [
                     'minActive' => 2,
                     'maxActive' => 10,
                 ],
+                new CoroutineMySQLConnector,
                 [
                     'host'        => '127.0.0.1',
                     'port'        => '3306',
@@ -181,15 +185,18 @@ class HttpServer
             $this->addConnectionPool('mysql', $pool1);
 
             // All Redis connections: [4 workers * 5 = 20, 4 workers * 20 = 80]
-            $pool2 = new PhpRedisPool([
-                'minActive' => 5,
-                'maxActive' => 20,
-            ], [
-                'host'     => '127.0.0.1',
-                'port'     => '6379',
-                'database' => 0,
-                'password' => null,
-            ]);
+            $pool2 = new ConnectionPool(
+                [
+                    'minActive' => 5,
+                    'maxActive' => 20,
+                ],
+                new PhpRedisConnector,
+                [
+                    'host'     => '127.0.0.1',
+                    'port'     => '6379',
+                    'database' => 0,
+                    'password' => null,
+                ]);
             $pool2->init();
             $this->addConnectionPool('redis', $pool2);
         };

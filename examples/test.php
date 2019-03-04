@@ -1,13 +1,14 @@
 <?php
 include '../vendor/autoload.php';
 
-use Smf\ConnectionPool\CoroutineMySQLPool;
+use Smf\ConnectionPool\ConnectionPool;
+use Smf\ConnectionPool\Connectors\CoroutineMySQLConnector;
 use Swoole\Coroutine;
 use Swoole\Coroutine\MySQL;
 
 go(function () {
     // All MySQL connections: [10, 30]
-    $pool = new CoroutineMySQLPool(
+    $pool = new ConnectionPool(
         [
             'minActive'         => 10,
             'maxActive'         => 30,
@@ -15,6 +16,7 @@ go(function () {
             'maxIdleTime'       => 20,
             'idleCheckInterval' => 10,
         ],
+        new CoroutineMySQLConnector,
         [
             'host'        => '127.0.0.1',
             'port'        => '3306',
