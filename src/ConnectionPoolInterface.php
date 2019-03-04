@@ -7,9 +7,9 @@ interface ConnectionPoolInterface
 
     /**
      * Initialize the connection pool
-     * @param array $config The configurations of connection
+     * @return bool
      */
-    public function init(array $config);
+    public function init(): bool;
 
     /**
      * Return a connection to the connection pool

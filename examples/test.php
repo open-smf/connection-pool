@@ -7,18 +7,27 @@ use Swoole\Coroutine\MySQL;
 
 go(function () {
     // All MySQL connections: [10, 30]
-    $pool = new CoroutineMySQLPool(10, 30, 5, 20, 10);
-    $pool->init([
-        'host'        => '127.0.0.1',
-        'port'        => '3306',
-        'user'        => 'root',
-        'password'    => 'xy123456',
-        'database'    => 'test',
-        'timeout'     => 10,
-        'charset'     => 'utf8mb4',
-        'strict_type' => true,
-        'fetch_mode'  => true,
-    ]);
+    $pool = new CoroutineMySQLPool(
+        [
+            'minActive'         => 10,
+            'maxActive'         => 30,
+            'maxWaitTime'       => 5,
+            'maxIdleTime'       => 20,
+            'idleCheckInterval' => 10,
+        ],
+        [
+            'host'        => '127.0.0.1',
+            'port'        => '3306',
+            'user'        => 'root',
+            'password'    => 'xy123456',
+            'database'    => 'test',
+            'timeout'     => 10,
+            'charset'     => 'utf8mb4',
+            'strict_type' => true,
+            'fetch_mode'  => true,
+        ]
+    );
+    $pool->init();
 
     swoole_timer_tick(1000, function () use ($pool) {
         var_dump('Pool connection count: ' . $pool->getConnectionCount());

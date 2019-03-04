@@ -20,7 +20,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
     protected $pool;
 
     /**@var array The config of connection */
-    protected $config;
+    protected $connectionConfig;
 
     /**@var int Current all connection count */
     protected $connectionCount = 0;
@@ -31,44 +31,50 @@ abstract class ConnectionPool implements ConnectionPoolInterface
     /**@var int The maximum number of active connections */
     protected $maxActive = 1;
 
-    /**@var int The maximum waiting time for connection, when reached, an exception will be thrown */
+    /**@var float The maximum waiting time for connection, when reached, an exception will be thrown */
     protected $maxWaitTime = 5;
 
-    /**@var int The maximum idle time for the connection, when reached, the connection will be removed from pool, and keep the least $minActive connections in the pool */
+    /**@var float The maximum idle time for the connection, when reached, the connection will be removed from pool, and keep the least $minActive connections in the pool */
     protected $maxIdleTime = 5;
+
+    /**@var float The interval to check idle connection */
+    protected $idleCheckInterval = 5;
 
     /**@var int The timer id of balancer */
     protected $balancerTimerId;
 
     /**
      * ConnectionPool constructor.
-     * @param int $minActive The minimum number of active connections
-     * @param int $maxActive The maximum number of active connections
-     * @param float $maxWaitTime The maximum waiting time for connection, when reached, an exception will be thrown
-     * @param float $maxIdleTime The maximum idle time for the connection, when reached, the connection will be removed from pool, and keep the least $minActive connections in the pool
-     * @param float $idleCheckInterval The interval to check idle connection
+     * @param array $poolConfig The minimum number of active connections, the detail keys:
+     * int minActive The minimum number of active connections
+     * int maxActive The maximum number of active connections
+     * float maxWaitTime The maximum waiting time for connection, when reached, an exception will be thrown
+     * float maxIdleTime The maximum idle time for the connection, when reached, the connection will be removed from pool, and keep the least $minActive connections in the pool
+     * float idleCheckInterval The interval to check idle connection
+     * @param array $connectionConfig The config of connection
      */
-    public function __construct(int $minActive, int $maxActive, float $maxWaitTime = 5, float $maxIdleTime = 30, float $idleCheckInterval = 15)
+    public function __construct(array $poolConfig, array $connectionConfig)
     {
-        $this->minActive = $minActive;
-        $this->maxActive = $maxActive;
-        $this->maxWaitTime = $maxWaitTime;
-        $this->maxIdleTime = $maxIdleTime;
-        $this->pool = new Channel($this->maxActive);
-        $this->balancerTimerId = $this->startBalanceTimer($idleCheckInterval >= static::MIN_CHECK_IDLE_INTERVAL ? $idleCheckInterval : static::MIN_CHECK_IDLE_INTERVAL);
+        $this->minActive = $poolConfig['minActive'] ?? 20;
+        $this->maxActive = $poolConfig['maxActive'] ?? 100;
+        $this->maxWaitTime = $poolConfig['maxWaitTime'] ?? 5;
+        $this->maxIdleTime = $poolConfig['maxIdleTime'] ?? 30;
+        $poolConfig['idleCheckInterval'] = $poolConfig['idleCheckInterval'] ?? 15;
+        $this->idleCheckInterval = $poolConfig['idleCheckInterval'] >= static::MIN_CHECK_IDLE_INTERVAL ? $poolConfig['idleCheckInterval'] : static::MIN_CHECK_IDLE_INTERVAL;
+        $this->connectionConfig = $connectionConfig;
     }
 
     /**
      * Initialize the connection pool
-     * @param array $config The config of connection
      * @return bool
      */
-    public function init(array $config): bool
+    public function init(): bool
     {
         if ($this->connectionCount > 0) {
             return false;
         }
-        $this->config = $config;
+        $this->pool = new Channel($this->maxActive);
+        $this->balancerTimerId = $this->startBalanceTimer($this->idleCheckInterval);
         for ($i = 0; $i < $this->minActive; $i++) {
             $connection = $this->createConnection();
             $ret = $this->pool->push($connection, static::CHANNEL_TIMEOUT);
@@ -216,7 +222,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
     protected function createConnection()
     {
         $this->connectionCount++;
-        $connection = $this->getConnector()->connect($this->config);
+        $connection = $this->getConnector()->connect($this->connectionConfig);
         $connection->{static::KEY_LAST_ACTIVE_TIME} = time();
         return $connection;
     }

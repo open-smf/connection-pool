@@ -29,18 +29,27 @@ use Swoole\Coroutine\MySQL;
 
 go(function () {
     // All MySQL connections: [10, 30]
-    $pool = new CoroutineMySQLPool(10, 30, 5, 20, 10);
-    $pool->init([
-        'host'        => '127.0.0.1',
-        'port'        => '3306',
-        'user'        => 'root',
-        'password'    => 'xy123456',
-        'database'    => 'test',
-        'timeout'     => 10,
-        'charset'     => 'utf8mb4',
-        'strict_type' => true,
-        'fetch_mode'  => true,
-    ]);
+    $pool = new CoroutineMySQLPool(
+        [
+            'minActive'         => 10,
+            'maxActive'         => 30,
+            'maxWaitTime'       => 5,
+            'maxIdleTime'       => 20,
+            'idleCheckInterval' => 10,
+        ],
+        [
+            'host'        => '127.0.0.1',
+            'port'        => '3306',
+            'user'        => 'root',
+            'password'    => 'xy123456',
+            'database'    => 'test',
+            'timeout'     => 10,
+            'charset'     => 'utf8mb4',
+            'strict_type' => true,
+            'fetch_mode'  => true,
+        ]
+    );
+    $pool->init();
 
     swoole_timer_tick(1000, function () use ($pool) {
         var_dump('Pool connection count: ' . $pool->getConnectionCount());
@@ -110,7 +119,7 @@ class HttpServer
             'http_compression'      => false,
             'enable_static_handler' => false,
             'buffer_output_size'    => 4 * 1024 * 1024,
-            'worker_num'            => 4,
+            'worker_num'            => 4, // Each worker holds a connection pool
         ]);
     }
 
@@ -146,29 +155,37 @@ class HttpServer
     protected function bindWorkerEvents()
     {
         $createPools = function () {
-            // All MySQL connections: [4*2, 4*10]
-            $pool1 = new CoroutineMySQLPool(2, 10);
-            $pool1->init([
-                'host'        => '127.0.0.1',
-                'port'        => '3306',
-                'user'        => 'root',
-                'password'    => 'xy123456',
-                'database'    => 'test',
-                'timeout'     => 10,
-                'charset'     => 'utf8mb4',
-                'strict_type' => true,
-                'fetch_mode'  => true,
-            ]);
+            // All MySQL connections: [4 workers * 2 = 8, 4 workers * 10 = 40]
+            $pool1 = new CoroutineMySQLPool(
+                [
+                    'minActive' => 2,
+                    'maxActive' => 10,
+                ],
+                [
+                    'host'        => '127.0.0.1',
+                    'port'        => '3306',
+                    'user'        => 'root',
+                    'password'    => 'xy123456',
+                    'database'    => 'test',
+                    'timeout'     => 10,
+                    'charset'     => 'utf8mb4',
+                    'strict_type' => true,
+                    'fetch_mode'  => true,
+                ]);
+            $pool1->init();
             $this->addConnectionPool('mysql', $pool1);
 
-            // All Redis connections: [4*5, 4*20]
-            $pool2 = new PhpRedisPool(5, 20);
-            $pool2->init([
+            // All Redis connections: [4 workers * 5 = 20, 4 workers * 20 = 80]
+            $pool2 = new PhpRedisPool([
+                'minActive' => 5,
+                'maxActive' => 20,
+            ], [
                 'host'     => '127.0.0.1',
                 'port'     => '6379',
                 'database' => 0,
                 'password' => null,
             ]);
+            $pool2->init();
             $this->addConnectionPool('redis', $pool2);
         };
         $closePools = function () {
