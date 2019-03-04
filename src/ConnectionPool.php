@@ -82,16 +82,18 @@ class ConnectionPool implements ConnectionPoolInterface
         if ($this->initialized) {
             return false;
         }
+        $this->initialized = true;
         $this->pool = new Channel($this->maxActive);
         $this->balancerTimerId = $this->startBalanceTimer($this->idleCheckInterval);
-        for ($i = 0; $i < $this->minActive; $i++) {
-            $connection = $this->createConnection();
-            $ret = $this->pool->push($connection, static::CHANNEL_TIMEOUT);
-            if ($ret === false) {
-                $this->removeConnection($connection);
+        go(function () {
+            for ($i = 0; $i < $this->minActive; $i++) {
+                $connection = $this->createConnection();
+                $ret = $this->pool->push($connection, static::CHANNEL_TIMEOUT);
+                if ($ret === false) {
+                    $this->removeConnection($connection);
+                }
             }
-        }
-        $this->initialized = true;
+        });
         return true;
     }
 
