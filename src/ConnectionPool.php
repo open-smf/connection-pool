@@ -99,9 +99,13 @@ class ConnectionPool implements ConnectionPoolInterface
      * Borrow a connection from the connection pool, throw an exception if timeout
      * @return mixed The connection resource
      * @throws BorrowConnectionTimeoutException
+     * @throws \RuntimeException
      */
     public function borrow()
     {
+        if (!$this->initialized) {
+            throw new \RuntimeException('Please initialize the connection pool first, call $pool->init().');
+        }
         if ($this->pool->isEmpty()) {
             // Create more connections
             if ($this->connectionCount < $this->maxActive) {
@@ -138,6 +142,9 @@ class ConnectionPool implements ConnectionPoolInterface
      */
     public function return($connection): bool
     {
+        if (!$this->initialized) {
+            throw new \RuntimeException('Please initialize the connection pool first, call $pool->init().');
+        }
         if ($this->pool->isFull()) {
             // Discard the connection
             return false;
