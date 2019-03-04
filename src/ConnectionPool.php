@@ -149,6 +149,7 @@ class ConnectionPool implements ConnectionPoolInterface
         }
         if ($this->pool->isFull()) {
             // Discard the connection
+            $this->removeConnection($connection);
             return false;
         }
         $connection->{static::KEY_LAST_ACTIVE_TIME} = time();
