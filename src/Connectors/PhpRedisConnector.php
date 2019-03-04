@@ -32,4 +32,9 @@ class PhpRedisConnector implements ConnectorInterface
         }
         return $connection;
     }
+
+    public function disconnect($connection)
+    {
+        $connection->close();
+    }
 }

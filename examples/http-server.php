@@ -46,21 +46,19 @@ class HttpServer
     {
         $this->swoole->on('Request', function (Request $request, Response $response) {
             $pool1 = $this->getConnectionPool('mysql');
-            $mysqlConn = $pool1->borrow();
             /**@var MySQL $mysql */
-            $mysql = $mysqlConn->getRawConnection();
-            defer(function () use ($pool1, $mysqlConn) {
-                $pool1->return($mysqlConn);
+            $mysql = $pool1->borrow();
+            defer(function () use ($pool1, $mysql) {
+                $pool1->return($mysql);
             });
             $status = $mysql->query('SHOW STATUS LIKE \'Threads_connected\'');
 
 
             $pool2 = $this->getConnectionPool('redis');
-            $redisConn = $pool2->borrow();
             /**@var Redis $redis */
-            $redis = $redisConn->getRawConnection();
-            defer(function () use ($pool2, $redisConn) {
-                $this->pools['redis']->return($redisConn);
+            $redis = $pool2->borrow();
+            defer(function () use ($pool2, $redis) {
+                $this->pools['redis']->return($redis);
             });
             $clients = $redis->info('Clients');
 
@@ -77,7 +75,7 @@ class HttpServer
     {
         $createPools = function () {
             // All MySQL connections: [4*2, 4*10]
-            $pool1 = new CoroutineMySQLPool(2, 10, 5, 10);
+            $pool1 = new CoroutineMySQLPool(2, 10);
             $pool1->init([
                 'host'        => '127.0.0.1',
                 'port'        => '3306',
@@ -91,8 +89,8 @@ class HttpServer
             ]);
             $this->addConnectionPool('mysql', $pool1);
 
-            // All Redis connections: [4*2, 4*10]
-            $pool2 = new PhpRedisPool(2, 10, 5, 10);
+            // All Redis connections: [4*5, 4*20]
+            $pool2 = new PhpRedisPool(5, 20);
             $pool2->init([
                 'host'     => '127.0.0.1',
                 'port'     => '6379',

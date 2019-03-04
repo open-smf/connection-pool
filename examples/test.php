@@ -1,5 +1,4 @@
 <?php
-
 include '../vendor/autoload.php';
 
 use Smf\ConnectionPool\CoroutineMySQLPool;
@@ -8,7 +7,7 @@ use Swoole\Coroutine\MySQL;
 
 go(function () {
     // All MySQL connections: [10, 30]
-    $pool = new CoroutineMySQLPool(10, 30, 5, 10);
+    $pool = new CoroutineMySQLPool(10, 30, 5, 20, 10);
     $pool->init([
         'host'        => '127.0.0.1',
         'port'        => '3306',
@@ -22,11 +21,11 @@ go(function () {
     ]);
 
     swoole_timer_tick(1000, function () use ($pool) {
-        var_dump('Current connection count: ' . $pool->getCurrentCount());
+        var_dump('Connection count: ' . $pool->getConnectionCount());
     });
 
     while (true) {
-        $count = mt_rand(10, 32);
+        $count = mt_rand(1, 32);
         var_dump('Query count: ' . $count);
         for ($i = 0; $i < $count; $i++) {
             go(function () use ($pool) {
@@ -41,6 +40,6 @@ go(function () {
                 }
             });
         }
-        Coroutine::sleep(1);
+        Coroutine::sleep(mt_rand(1, 15));
     }
 });

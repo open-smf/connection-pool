@@ -14,4 +14,9 @@ class CoroutineMySQLConnector implements ConnectorInterface
         }
         return $connection;
     }
+
+    public function disconnect($connection)
+    {
+        $connection->close();
+    }
 }
