@@ -16,6 +16,9 @@ class ConnectionPool implements ConnectionPoolInterface
     /**@var string The key about the last active time of connection */
     const KEY_LAST_ACTIVE_TIME = '__lat';
 
+    /**@var bool Whether the connection pool is initialized */
+    protected $initialized;
+
     /**@var Channel The connection pool */
     protected $pool;
 
@@ -59,6 +62,7 @@ class ConnectionPool implements ConnectionPoolInterface
      */
     public function __construct(array $poolConfig, ConnectorInterface $connector, array $connectionConfig)
     {
+        $this->initialized = false;
         $this->minActive = $poolConfig['minActive'] ?? 20;
         $this->maxActive = $poolConfig['maxActive'] ?? 100;
         $this->maxWaitTime = $poolConfig['maxWaitTime'] ?? 5;
@@ -75,7 +79,7 @@ class ConnectionPool implements ConnectionPoolInterface
      */
     public function init(): bool
     {
-        if ($this->connectionCount > 0) {
+        if ($this->initialized) {
             return false;
         }
         $this->pool = new Channel($this->maxActive);
@@ -87,6 +91,7 @@ class ConnectionPool implements ConnectionPoolInterface
                 $this->removeConnection($connection);
             }
         }
+        $this->initialized = true;
         return true;
     }
 
@@ -160,7 +165,7 @@ class ConnectionPool implements ConnectionPoolInterface
      */
     public function close(): bool
     {
-        if ($this->pool === null) {
+        if (!$this->initialized) {
             return false;
         }
         swoole_timer_clear($this->balancerTimerId);
