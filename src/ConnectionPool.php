@@ -7,10 +7,12 @@ use Swoole\Coroutine\Channel;
 
 abstract class ConnectionPool implements ConnectionPoolInterface
 {
-    const CHANNEL_TIMEOUT = 0.001;
+    const CHANNEL_TIMEOUT      = 0.001;
+    const LAST_ACTIVE_TIME_KEY = '__lat';
 
     protected $pool;
     protected $config;
+    protected $connector;
     protected $currentCount = 0;
 
     protected $minActive   = 1;
@@ -46,7 +48,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         for ($i = 0; $i < $this->minActive; $i++) {
             $this->currentCount++;
             $connection = $this->createConnection($this->config);
-            $connection->updateLastActiveTime();
+            $connection->{static::LAST_ACTIVE_TIME_KEY} = time();
             $ret = $this->pool->push($connection, static::CHANNEL_TIMEOUT);
             if ($ret === false) {
                 $this->currentCount--;
@@ -55,18 +57,26 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         return true;
     }
 
-    /**
-     * Create the connector to create the connection
-     * @return ConnectorInterface
-     */
-    abstract protected function createConnector(): ConnectorInterface;
+    protected function getConnector(): ConnectorInterface
+    {
+        static $connector = null;
+        if ($connector === null) {
+            $connector = $this->getConnectorClass();
+            $connector = new $connector();
+        }
+        return $connector;
+    }
 
     /**
-     * Create the connection
-     * @param array $config
-     * @return mixed Return the connection resource
+     * Specify the class name of the connector.
+     * @return ConnectorInterface
      */
-    abstract protected function createConnection(array $config): Connection;
+    abstract protected function getConnectorClass(): string;
+
+    protected function createConnection(array $config)
+    {
+        return $this->getConnector()->connect($config);
+    }
 
     protected function clearInactiveConnections()
     {
@@ -77,12 +87,11 @@ abstract class ConnectionPool implements ConnectionPoolInterface
                 break;
             }
 
-            /**@var Connection $connection */
             $connection = $this->pool->pop(static::CHANNEL_TIMEOUT);
             if ($connection === false) {
                 break;
             }
-            $lastActiveTime = $connection->getLastActiveTime();
+            $lastActiveTime = $connection->{static::LAST_ACTIVE_TIME_KEY} ?? 0;
             if ($now - $lastActiveTime < $this->maxIdleTime) {
                 $validConnections[] = $connection;
             } else {
@@ -98,7 +107,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         }
     }
 
-    public function borrow(): Connection
+    public function borrow()
     {
         if ($this->pool->isEmpty()) {
             // Create more connections
@@ -117,13 +126,13 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         return $connection;
     }
 
-    public function return(Connection $connection): bool
+    public function return($connection): bool
     {
         if ($this->pool->isFull()) {
             // Discard the connection
             return false;
         }
-        $connection->updateLastActiveTime();
+        $connection->{static::LAST_ACTIVE_TIME_KEY} = time();
         $ret = $this->pool->push($connection, static::CHANNEL_TIMEOUT);
         if ($ret === false) {
             $this->currentCount--;

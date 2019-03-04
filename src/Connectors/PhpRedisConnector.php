@@ -2,36 +2,34 @@
 
 namespace Smf\ConnectionPool\Connectors;
 
-use Smf\ConnectionPool\Connection;
-
 class PhpRedisConnector implements ConnectorInterface
 {
-    public function connect(array $config): Connection
+    public function connect(array $config)
     {
-        $raw = new \Redis();
-        $ret = $raw->connect($config['host'], $config['port'], $config['timeout'] ?? 10);
+        $connection = new \Redis();
+        $ret = $connection->connect($config['host'], $config['port'], $config['timeout'] ?? 10);
         if ($ret === false) {
             throw new \RuntimeException(sprintf(
                 'Failed to connect Redis server %s:%d, %s',
                 $config['host'],
                 $config['port'],
-                $raw->getLastError()
+                $connection->getLastError()
             ));
         }
         if (isset($config['database'])) {
-            $raw->select($config['database']);
+            $connection->select($config['database']);
         }
         if (isset($config['password'])) {
             $config['password'] = (string)$config['password'];
             if ($config['password'] !== '') {
-                $raw->auth($config['password']);
+                $connection->auth($config['password']);
             }
         }
         if (isset($config['options'])) {
             foreach ($config['options'] as $key => $value) {
-                $raw->setOption($key, $value);
+                $connection->setOption($key, $value);
             }
         }
-        return new Connection($raw);
+        return $connection;
     }
 }

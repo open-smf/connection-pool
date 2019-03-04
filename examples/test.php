@@ -30,11 +30,10 @@ go(function () {
         var_dump('Query count: ' . $count);
         for ($i = 0; $i < $count; $i++) {
             go(function () use ($pool) {
-                $conn = $pool->borrow();
                 /**@var MySQL $mysql */
-                $mysql = $conn->getRawConnection();
-                defer(function () use ($pool, $conn) {
-                    $pool->return($conn);
+                $mysql = $pool->borrow();
+                defer(function () use ($pool, $mysql) {
+                    $pool->return($mysql);
                 });
                 $ret = $mysql->query('select sleep(1),now() as now');
                 if (!isset($ret[0]['now'])) {

@@ -13,17 +13,17 @@ interface ConnectionPoolInterface
 
     /**
      * Return a connection to the connection pool
-     * @param Connection $connection
+     * @param mixed $connection
      * @return bool
      */
-    public function return(Connection $connection): bool;
+    public function return($connection): bool;
 
     /**
      * Borrow a connection to the connection pool
-     * @return Connection
+     * @return mixed
      * @throws BorrowConnectionTimeoutException
      */
-    public function borrow(): Connection;
+    public function borrow();
 
     /**
      * Close the connection pool, release the resource of all connections
