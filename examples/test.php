@@ -29,13 +29,18 @@ go(function () {
     );
     $pool->init();
 
-    swoole_timer_tick(1000, function () use ($pool) {
-        var_dump('Pool connection count: ' . $pool->getConnectionCount());
+    $peakCount = 0;
+    swoole_timer_tick(1000, function () use ($pool, &$peakCount) {
+        $count = $pool->getConnectionCount();
+        if ($peakCount < $count) {
+            $peakCount = $count;
+        }
+        echo "Pool connection count: $count, peak count: $peakCount\n";
     });
 
     while (true) {
         $count = mt_rand(1, 32);
-        var_dump('Query count: ' . $count);
+        echo "Query count: $count\n";
         for ($i = 0; $i < $count; $i++) {
             go(function () use ($pool) {
                 /**@var MySQL $mysql */
@@ -45,9 +50,9 @@ go(function () {
                 });
                 $ret = $mysql->query('show status like \'Threads_connected\'');
                 if (!isset($ret[0]['Variable_name'])) {
-                    var_dump("Invalid query result: \n" . print_r($ret, true));
+                    echo "Invalid query result: \n", print_r($ret, true);
                 }
-                var_dump($ret[0]['Variable_name'] . ': ' . $ret[0]['Value']);
+                echo $ret[0]['Variable_name'] . ': ' . $ret[0]['Value'] . "\n";
             });
         }
         Coroutine::sleep(mt_rand(1, 15));
