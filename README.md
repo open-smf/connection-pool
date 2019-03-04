@@ -13,7 +13,7 @@ A common connection pool based on Swoole is usually used as the database connect
 > Install package via [Composer](https://getcomposer.org/).
 
 ```shell
-composer require "open-smf/connection-pool"
+composer require "open-smf/connection-pool:~1.0"
 ```
 
 ## Usage
