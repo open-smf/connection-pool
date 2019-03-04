@@ -9,12 +9,7 @@ class PhpRedisConnector implements ConnectorInterface
         $connection = new \Redis();
         $ret = $connection->connect($config['host'], $config['port'], $config['timeout'] ?? 10);
         if ($ret === false) {
-            throw new \RuntimeException(sprintf(
-                'Failed to connect Redis server %s:%d, %s',
-                $config['host'],
-                $config['port'],
-                $connection->getLastError()
-            ));
+            throw new \RuntimeException(sprintf('Failed to connect Redis server: %s', $connection->getLastError()));
         }
         if (isset($config['password'])) {
             $config['password'] = (string)$config['password'];
