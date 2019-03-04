@@ -43,7 +43,7 @@ go(function () {
     ]);
 
     swoole_timer_tick(1000, function () use ($pool) {
-        var_dump('Connection count: ' . $pool->getConnectionCount());
+        var_dump('Pool connection count: ' . $pool->getConnectionCount());
     });
 
     while (true) {
@@ -56,10 +56,11 @@ go(function () {
                 defer(function () use ($pool, $mysql) {
                     $pool->return($mysql);
                 });
-                $ret = $mysql->query('select sleep(1),now() as now');
-                if (!isset($ret[0]['now'])) {
+                $ret = $mysql->query('show status like \'Threads_connected\'');
+                if (!isset($ret[0]['Variable_name'])) {
                     var_dump("Invalid query result: \n" . print_r($ret, true));
                 }
+                var_dump($ret[0]['Variable_name'] . ': ' . $ret[0]['Value']);
             });
         }
         Coroutine::sleep(mt_rand(1, 15));
