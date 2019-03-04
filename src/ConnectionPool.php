@@ -157,7 +157,7 @@ class ConnectionPool implements ConnectionPoolInterface
         if ($ret === false) {
             $this->removeConnection($connection);
         }
-        return $ret;
+        return true;
     }
 
     /**
