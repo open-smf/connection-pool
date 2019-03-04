@@ -79,7 +79,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
             $connection = $this->createConnection();
             $ret = $this->pool->push($connection, static::CHANNEL_TIMEOUT);
             if ($ret === false) {
-                $this->closeConnection($connection);
+                $this->removeConnection($connection);
             }
         }
         return true;
@@ -110,6 +110,8 @@ abstract class ConnectionPool implements ConnectionPoolInterface
             $exception->setTimeout($this->maxWaitTime);
             throw $exception;
         }
+        // Reset the connection
+        $this->getConnector()->reset($connection, $this->connectionConfig);
         return $connection;
     }
 
@@ -127,7 +129,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         $connection->{static::KEY_LAST_ACTIVE_TIME} = time();
         $ret = $this->pool->push($connection, static::CHANNEL_TIMEOUT);
         if ($ret === false) {
-            $this->closeConnection($connection);
+            $this->removeConnection($connection);
         }
         return $ret;
     }
@@ -190,14 +192,14 @@ abstract class ConnectionPool implements ConnectionPoolInterface
                 if ($now - $lastActiveTime < $this->maxIdleTime) {
                     $validConnections[] = $connection;
                 } else {
-                    $this->closeConnection($connection);
+                    $this->removeConnection($connection);
                 }
             }
 
             foreach ($validConnections as $validConnection) {
                 $ret = $this->pool->push($validConnection, static::CHANNEL_TIMEOUT);
                 if ($ret === false) {
-                    $this->closeConnection($validConnection);
+                    $this->removeConnection($validConnection);
                 }
             }
         });
@@ -227,7 +229,7 @@ abstract class ConnectionPool implements ConnectionPoolInterface
         return $connection;
     }
 
-    protected function closeConnection($connection)
+    protected function removeConnection($connection)
     {
         $this->connectionCount--;
         go(function () use ($connection) {

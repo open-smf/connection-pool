@@ -16,14 +16,14 @@ class PhpRedisConnector implements ConnectorInterface
                 $connection->getLastError()
             ));
         }
-        if (isset($config['database'])) {
-            $connection->select($config['database']);
-        }
         if (isset($config['password'])) {
             $config['password'] = (string)$config['password'];
             if ($config['password'] !== '') {
                 $connection->auth($config['password']);
             }
+        }
+        if (isset($config['database'])) {
+            $connection->select($config['database']);
         }
         if (isset($config['options'])) {
             foreach ($config['options'] as $key => $value) {
@@ -35,6 +35,26 @@ class PhpRedisConnector implements ConnectorInterface
 
     public function disconnect($connection)
     {
+        /**@var \Redis $connection */
         $connection->close();
+    }
+
+    public function isConnected($connection): bool
+    {
+        /**@var \Redis $connection */
+        return $connection->isConnected();
+    }
+
+    public function reset($connection, array $config)
+    {
+        /**@var \Redis $connection */
+        if (isset($config['database'])) {
+            $connection->select($config['database']);
+        }
+        if (isset($config['options'])) {
+            foreach ($config['options'] as $key => $value) {
+                $connection->setOption($key, $value);
+            }
+        }
     }
 }

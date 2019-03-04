@@ -17,6 +17,18 @@ class CoroutineMySQLConnector implements ConnectorInterface
 
     public function disconnect($connection)
     {
+        /**@var MySQL $connection */
         $connection->close();
+    }
+
+    public function isConnected($connection): bool
+    {
+        /**@var MySQL $connection */
+        return $connection->connected;
+    }
+
+    public function reset($connection, array $config)
+    {
+
     }
 }

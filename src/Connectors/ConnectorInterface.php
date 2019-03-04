@@ -17,4 +17,19 @@ interface ConnectorInterface
      * @return mixed
      */
     public function disconnect($connection);
+
+    /**
+     * Whether the connection is established
+     * @param mixed $connection
+     * @return bool
+     */
+    public function isConnected($connection): bool;
+
+    /**
+     * Reset the connection
+     * @param mixed $connection
+     * @param array $config
+     * @return mixed
+     */
+    public function reset($connection, array $config);
 }
