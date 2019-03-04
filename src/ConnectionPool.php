@@ -110,8 +110,15 @@ abstract class ConnectionPool implements ConnectionPoolInterface
             $exception->setTimeout($this->maxWaitTime);
             throw $exception;
         }
-        // Reset the connection
-        $this->getConnector()->reset($connection, $this->connectionConfig);
+        $connector = $this->getConnector();
+        if ($connector->isConnected($connection)) {
+            // Reset the connection for the connected connection
+            $connector->reset($connection, $this->connectionConfig);
+        } else {
+            // Remove the disconnected connection, then create a new connection
+            $this->removeConnection($connection);
+            $connection = $this->createConnection();
+        }
         return $connection;
     }
 
