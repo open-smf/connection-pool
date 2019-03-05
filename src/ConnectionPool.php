@@ -19,6 +19,9 @@ class ConnectionPool implements ConnectionPoolInterface
     /**@var bool Whether the connection pool is initialized */
     protected $initialized;
 
+    /**@var bool Whether the connection pool is closed */
+    protected $closed;
+
     /**@var Channel The connection pool */
     protected $pool;
 
@@ -63,6 +66,7 @@ class ConnectionPool implements ConnectionPoolInterface
     public function __construct(array $poolConfig, ConnectorInterface $connector, array $connectionConfig)
     {
         $this->initialized = false;
+        $this->closed = false;
         $this->minActive = $poolConfig['minActive'] ?? 20;
         $this->maxActive = $poolConfig['maxActive'] ?? 100;
         $this->maxWaitTime = $poolConfig['maxWaitTime'] ?? 5;
@@ -178,18 +182,24 @@ class ConnectionPool implements ConnectionPoolInterface
         if (!$this->initialized) {
             return false;
         }
-        swoole_timer_clear($this->balancerTimerId);
-        while (true) {
-            if ($this->pool->isEmpty()) {
-                break;
-            }
-            $connection = $this->pool->pop(static::CHANNEL_TIMEOUT);
-            if ($connection !== false) {
-                $this->connector->disconnect($connection);
-            }
+        if ($this->closed) {
+            return false;
         }
-        $this->pool->close();
-        $this->pool = null;
+        go(function () {
+            swoole_timer_clear($this->balancerTimerId);
+            while (true) {
+                if ($this->pool->isEmpty()) {
+                    break;
+                }
+                $connection = $this->pool->pop(static::CHANNEL_TIMEOUT);
+                if ($connection !== false) {
+                    $this->connector->disconnect($connection);
+                }
+            }
+            $this->pool->close();
+            $this->pool = null;
+        });
+        $this->closed = true;
         return true;
     }
 
