@@ -197,7 +197,6 @@ class ConnectionPool implements ConnectionPoolInterface
                 }
             }
             $this->pool->close();
-            $this->pool = null;
         });
         $this->closed = true;
         return true;
