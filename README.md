@@ -215,6 +215,8 @@ class HttpServer
     }
 }
 
+// Enable runtime coroutine for PhpRedis
+Swoole\Runtime::enableCoroutine(true);
 $server = new HttpServer('0.0.0.0', 5200);
 $server->start();
 ```
