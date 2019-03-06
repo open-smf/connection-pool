@@ -165,12 +165,21 @@ class ConnectionPool implements ConnectionPoolInterface
     }
 
     /**
-     * Get the number of connections created
+     * Get the number of created connections
      * @return int
      */
     public function getConnectionCount(): int
     {
         return $this->connectionCount;
+    }
+
+    /**
+     * Get the number of idle connections
+     * @return int
+     */
+    public function getIdleCount(): int
+    {
+        return $this->pool->length();
     }
 
     /**
