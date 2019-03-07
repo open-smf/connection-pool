@@ -31,13 +31,15 @@ go(function () {
     );
     $pool->init();
 
+    // For debug
     $peakCount = 0;
     swoole_timer_tick(1000, function () use ($pool, &$peakCount) {
         $count = $pool->getConnectionCount();
+        $idleCount = $pool->getIdleCount();
         if ($peakCount < $count) {
             $peakCount = $count;
         }
-        echo "Pool connection count: $count, peak count: $peakCount\n";
+        echo "Pool connection count: $count, peak count: $peakCount, idle count: $idleCount\n";
     });
 
     while (true) {
