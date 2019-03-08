@@ -195,9 +195,7 @@ class ConnectionPool implements ConnectionPoolInterface
             return false;
         }
         $this->closed = true;
-        if (swoole_timer_exists($this->balancerTimerId)) {
-            swoole_timer_clear($this->balancerTimerId);
-        }
+        swoole_timer_clear($this->balancerTimerId);
         go(function () {
             while (true) {
                 if ($this->pool->isEmpty()) {
@@ -220,7 +218,7 @@ class ConnectionPool implements ConnectionPoolInterface
 
     protected function startBalanceTimer(float $interval)
     {
-        swoole_timer_tick(round($interval) * 1000, function () {
+        return swoole_timer_tick(round($interval) * 1000, function () {
             $now = time();
             $validConnections = [];
             while (true) {
