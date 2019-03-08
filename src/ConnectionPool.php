@@ -194,8 +194,11 @@ class ConnectionPool implements ConnectionPoolInterface
         if ($this->closed) {
             return false;
         }
-        go(function () {
+        $this->closed = true;
+        if (swoole_timer_exists($this->balancerTimerId)) {
             swoole_timer_clear($this->balancerTimerId);
+        }
+        go(function () {
             while (true) {
                 if ($this->pool->isEmpty()) {
                     break;
@@ -207,7 +210,6 @@ class ConnectionPool implements ConnectionPoolInterface
             }
             $this->pool->close();
         });
-        $this->closed = true;
         return true;
     }
 
