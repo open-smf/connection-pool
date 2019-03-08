@@ -222,6 +222,9 @@ class ConnectionPool implements ConnectionPoolInterface
             $now = time();
             $validConnections = [];
             while (true) {
+                if ($this->closed) {
+                    break;
+                }
                 if ($this->connectionCount <= $this->minActive) {
                     break;
                 }
