@@ -211,7 +211,6 @@ class HttpServer
         };
         $this->swoole->on('WorkerStart', $createPools);
         $this->swoole->on('WorkerStop', $closePools);
-        $this->swoole->on('WorkerExit', $closePools);
         $this->swoole->on('WorkerError', $closePools);
     }
 
