@@ -2,14 +2,16 @@
 
 namespace Smf\ConnectionPool\Connectors;
 
-class PhpRedisConnector implements ConnectorInterface
+use Swoole\Coroutine\Redis;
+
+class CoroutineRedisConnector implements ConnectorInterface
 {
     public function connect(array $config)
     {
-        $connection = new \Redis();
-        $ret = $connection->connect($config['host'], $config['port'], $config['timeout'] ?? 10);
+        $connection = new Redis($config['options'] ?? []);
+        $ret = $connection->connect($config['host'], $config['port']);
         if ($ret === false) {
-            throw new \RuntimeException(sprintf('Failed to connect Redis server: %s', $connection->getLastError()));
+            throw new \RuntimeException(sprintf('Failed to connect Redis server: [%s] %s', $connection->errCode, $connection->errMsg));
         }
         if (isset($config['password'])) {
             $config['password'] = (string)$config['password'];
@@ -20,29 +22,27 @@ class PhpRedisConnector implements ConnectorInterface
         if (isset($config['database'])) {
             $connection->select($config['database']);
         }
-        foreach ($config['options'] ?? [] as $key => $value) {
-            $connection->setOption($key, $value);
-        }
         return $connection;
     }
 
     public function disconnect($connection)
     {
-        /**@var \Redis $connection */
+        /**@var Redis $connection */
         $connection->close();
     }
 
     public function isConnected($connection): bool
     {
-        /**@var \Redis $connection */
-        return $connection->isConnected();
+        /**@var Redis $connection */
+        return $connection->connected;
     }
 
     public function reset($connection, array $config)
     {
-        /**@var \Redis $connection */
+        /**@var Redis $connection */
         if (isset($config['database'])) {
             $connection->select($config['database']);
         }
+        $connection->setDefer(false);
     }
 }
