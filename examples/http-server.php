@@ -52,7 +52,7 @@ class HttpServer
             defer(function () use ($pool1, $mysql) {
                 $pool1->return($mysql);
             });
-            $status = $mysql->query('SHOW STATUS LIKE \'Threads_connected\'');
+            $status = $mysql->query('SHOW STATUS LIKE "Threads_connected"');
 
 
             $pool2 = $this->getConnectionPool('redis');
@@ -87,7 +87,7 @@ class HttpServer
                     'port'        => '3306',
                     'user'        => 'root',
                     'password'    => 'xy123456',
-                    'database'    => 'test',
+                    'database'    => 'mysql',
                     'timeout'     => 10,
                     'charset'     => 'utf8mb4',
                     'strict_type' => true,

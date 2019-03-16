@@ -25,11 +25,8 @@ composer require "open-smf/connection-pool:~1.0"
 - Basic usage
 
 ```php
-include '../vendor/autoload.php';
-
 use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\Connectors\CoroutineMySQLConnector;
-use Swoole\Coroutine;
 use Swoole\Coroutine\MySQL;
 
 go(function () {
@@ -48,53 +45,34 @@ go(function () {
             'port'        => '3306',
             'user'        => 'root',
             'password'    => 'xy123456',
-            'database'    => 'test',
+            'database'    => 'mysql',
             'timeout'     => 10,
             'charset'     => 'utf8mb4',
             'strict_type' => true,
             'fetch_mode'  => true,
         ]
     );
+    echo "Initialize connection pool\n";
     $pool->init();
-
-    // For debug
-    $peakCount = 0;
-    swoole_timer_tick(1000, function () use ($pool, &$peakCount) {
-        $count = $pool->getConnectionCount();
-        $idleCount = $pool->getIdleCount();
-        if ($peakCount < $count) {
-            $peakCount = $count;
-        }
-        echo "Pool connection count: $count, peak count: $peakCount, idle count: $idleCount\n";
+    defer(function () use ($pool) {
+        echo "Close connection pool\n";
+        $pool->close();
     });
 
-    while (true) {
-        $count = mt_rand(1, 32);
-        echo "Query count: $count\n";
-        for ($i = 0; $i < $count; $i++) {
-            go(function () use ($pool) {
-                /**@var MySQL $mysql */
-                $mysql = $pool->borrow();
-                defer(function () use ($pool, $mysql) {
-                    $pool->return($mysql);
-                });
-                $ret = $mysql->query('show status like \'Threads_connected\'');
-                if (!isset($ret[0]['Variable_name'])) {
-                    echo "Invalid query result: \n", print_r($ret, true);
-                }
-                echo $ret[0]['Variable_name'] . ': ' . $ret[0]['Value'] . "\n";
-            });
-        }
-        Coroutine::sleep(mt_rand(1, 15));
-    }
+    /**@var MySQL $connection */
+    $connection = $pool->borrow();
+    defer(function () use ($pool, $connection) {
+        echo "Return the connection to pool\n";
+        $pool->return($connection);
+    });
+    $status = $connection->query('SHOW STATUS LIKE "Threads_connected"');
+    var_dump($status);
 });
 ```
 
 - Usage in Swoole Server
 
 ```php
-include '../vendor/autoload.php';
-
 use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\ConnectionPoolTrait;
 use Smf\ConnectionPool\Connectors\CoroutineMySQLConnector;
@@ -146,7 +124,7 @@ class HttpServer
             defer(function () use ($pool1, $mysql) {
                 $pool1->return($mysql);
             });
-            $status = $mysql->query('SHOW STATUS LIKE \'Threads_connected\'');
+            $status = $mysql->query('SHOW STATUS LIKE "Threads_connected"');
 
 
             $pool2 = $this->getConnectionPool('redis');
@@ -181,7 +159,7 @@ class HttpServer
                     'port'        => '3306',
                     'user'        => 'root',
                     'password'    => 'xy123456',
-                    'database'    => 'test',
+                    'database'    => 'mysql',
                     'timeout'     => 10,
                     'charset'     => 'utf8mb4',
                     'strict_type' => true,

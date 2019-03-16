@@ -22,7 +22,7 @@ go(function () {
             'port'        => '3306',
             'user'        => 'root',
             'password'    => 'xy123456',
-            'database'    => 'test',
+            'database'    => 'mysql',
             'timeout'     => 10,
             'charset'     => 'utf8mb4',
             'strict_type' => true,
