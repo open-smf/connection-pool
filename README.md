@@ -21,6 +21,7 @@ composer require "open-smf/connection-pool:~1.0"
 ```
 
 ## Usage
+> See more [examples](examples).
 
 - Basic usage
 
