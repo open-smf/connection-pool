@@ -53,17 +53,18 @@ go(function () {
             'fetch_mode'  => true,
         ]
     );
-    echo "Initialize connection pool\n";
+    echo "Initializing connection pool\n";
     $pool->init();
     defer(function () use ($pool) {
-        echo "Close connection pool\n";
+        echo "Closing connection pool\n";
         $pool->close();
     });
 
+    echo "Borrowing the connection from pool\n";
     /**@var MySQL $connection */
     $connection = $pool->borrow();
     defer(function () use ($pool, $connection) {
-        echo "Return the connection to pool\n";
+        echo "Returning the connection to pool\n";
         $pool->return($connection);
     });
     $status = $connection->query('SHOW STATUS LIKE "Threads_connected"');

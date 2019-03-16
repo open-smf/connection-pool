@@ -23,17 +23,18 @@ go(function () {
             'timeout'  => 5,
         ]
     );
-    echo "Initialize connection pool\n";
+    echo "Initializing connection pool\n";
     $pool->init();
     defer(function () use ($pool) {
         echo "Close connection pool\n";
         $pool->close();
     });
 
+    echo "Borrowing the connection from pool\n";
     /**@var Redis $connection */
     $connection = $pool->borrow();
     defer(function () use ($pool, $connection) {
-        echo "Return the connection to pool\n";
+        echo "Returning the connection to pool\n";
         $pool->return($connection);
     });
     $connection->set('test', uniqid());
