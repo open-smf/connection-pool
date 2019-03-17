@@ -30,11 +30,12 @@ go(function () {
     echo "Borrowing the connection from pool\n";
     /**@var PostgreSQL $connection */
     $connection = $pool->borrow();
-    defer(function () use ($pool, $connection) {
-        echo "Returning the connection to pool\n";
-        $pool->return($connection);
-    });
+
     $result = $connection->query("SELECT * FROM pg_stat_database where datname='postgres';");
+
     $stat = $connection->fetchAssoc($result);
+    echo "Return the connection to pool as soon as possible\n";
+    $pool->return($connection);
+
     var_dump($stat);
 });

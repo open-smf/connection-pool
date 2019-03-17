@@ -49,24 +49,24 @@ class HttpServer
             $pool1 = $this->getConnectionPool('mysql');
             /**@var MySQL $mysql */
             $mysql = $pool1->borrow();
-            defer(function () use ($pool1, $mysql) {
-                $pool1->return($mysql);
-            });
             $status = $mysql->query('SHOW STATUS LIKE "Threads_connected"');
+            // Return the connection to pool as soon as possible
+            $pool1->return($mysql);
 
 
             $pool2 = $this->getConnectionPool('redis');
-            /**@var Redis $redis */
+            /**@var \Redis $redis */
             $redis = $pool2->borrow();
-            defer(function () use ($pool2, $redis) {
-                $this->pools['redis']->return($redis);
-            });
             $clients = $redis->info('Clients');
+            // Return the connection to pool as soon as possible
+            $pool2->return($redis);
 
             $json = [
                 'status'  => $status,
                 'clients' => $clients,
             ];
+            // Other logic
+            // ...
             $response->header('Content-Type', 'application/json');
             $response->end(json_encode($json));
         });

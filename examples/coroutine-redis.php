@@ -37,11 +37,12 @@ go(function () {
     echo "Borrowing the connection from pool\n";
     /**@var Redis $connection */
     $connection = $pool->borrow();
-    defer(function () use ($pool, $connection) {
-        echo "Returning the connection to pool\n";
-        $pool->return($connection);
-    });
+
     $connection->set('test', uniqid());
     $test = $connection->get('test');
+
+    echo "Return the connection to pool as soon as possible\n";
+    $pool->return($connection);
+
     var_dump($test);
 });

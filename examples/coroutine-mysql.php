@@ -38,10 +38,11 @@ go(function () {
     echo "Borrowing the connection from pool\n";
     /**@var MySQL $connection */
     $connection = $pool->borrow();
-    defer(function () use ($pool, $connection) {
-        echo "Returning the connection to pool\n";
-        $pool->return($connection);
-    });
+
     $status = $connection->query('SHOW STATUS LIKE "Threads_connected"');
+
+    echo "Return the connection to pool as soon as possible\n";
+    $pool->return($connection);
+
     var_dump($status);
 });
