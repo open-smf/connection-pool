@@ -28,10 +28,10 @@ composer require "open-smf/connection-pool:~1.0"
 | Connector | Connection description |
 | -------- | -------- |
 | CoroutineMySQLConnector | Instance of `Swoole\Coroutine\MySQL` |
-| CoroutinePostgreSQLConnector | Instance of `Swoole\Coroutine\PostgreSQL`, require configuring Swoole with `--enable-coroutine-postgresql`|
+| CoroutinePostgreSQLConnector | Instance of `Swoole\Coroutine\PostgreSQL`, require configuring `Swoole` with `--enable-coroutine-postgresql`|
 | CoroutineRedisConnector | Instance of `Swoole\Coroutine\Redis` |
 | PhpRedisConnector | Instance of `Redis`, require [redis](https://pecl.php.net/package/redis) |
-| YourConnector | YourConnector must implement interface `ConnectorInterface`, any object can be used as a connection instance |
+| YourConnector | `YourConnector` must implement interface `ConnectorInterface`, any object can be used as a connection instance |
 
 - Basic usage
 
