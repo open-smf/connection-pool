@@ -3,8 +3,8 @@ A common connection pool based on Swoole is usually used as the database connect
 
 [![Latest Version](https://img.shields.io/github/release/open-smf/connection-pool.svg)](https://github.com/open-smf/connection-pool/releases)
 [![PHP Version](https://img.shields.io/packagist/php-v/open-smf/connection-pool.svg?color=green)](https://secure.php.net)
-[![Packagist](https://img.shields.io/packagist/dt/open-smf/connection-pool.svg)](https://packagist.org/packages/open-smf/connection-pool)
-[![License](https://img.shields.io/packagist/l/open-smf/connection-pool.svg)](LICENSE)
+[![Total Downloads](https://poser.pugx.org/open-smf/connection-pool/downloads)](https://packagist.org/packages/open-smf/connection-pool)
+[![License](https://poser.pugx.org/open-smf/connection-pool/license)](LICENSE)
 
 ## Requirements
 
