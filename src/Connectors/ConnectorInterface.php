@@ -32,4 +32,12 @@ interface ConnectorInterface
      * @return mixed
      */
     public function reset($connection, array $config);
+
+    /**
+     * Validate the connection
+     *
+     * @param mixed $connection
+     * @return bool
+     */
+    public function validate($connection): bool;
 }

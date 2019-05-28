@@ -45,4 +45,9 @@ class CoroutineRedisConnector implements ConnectorInterface
         }
         $connection->setDefer(false);
     }
+
+    public function validate($connection): bool
+    {
+        return $connection instanceof Redis;
+    }
 }
