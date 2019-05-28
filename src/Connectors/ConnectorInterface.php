@@ -39,5 +39,5 @@ interface ConnectorInterface
      * @param mixed $connection
      * @return bool
      */
-    public function validate($connection);
+    public function validate($connection): bool;
 }
