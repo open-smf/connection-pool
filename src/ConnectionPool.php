@@ -148,6 +148,10 @@ class ConnectionPool implements ConnectionPoolInterface
      */
     public function return($connection): bool
     {
+        if (!$this->connector->validate($connection)) {
+            throw new \RuntimeException('Connection of unexpected type returned.');
+        }
+
         if (!$this->initialized) {
             throw new \RuntimeException('Please initialize the connection pool first, call $pool->init().');
         }

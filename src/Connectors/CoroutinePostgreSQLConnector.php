@@ -34,4 +34,9 @@ class CoroutinePostgreSQLConnector implements ConnectorInterface
     {
         /**@var PostgreSQL $connection */
     }
+
+    public function validate($connection)
+    {
+        return $connection instanceof PostgreSQL;
+    }
 }

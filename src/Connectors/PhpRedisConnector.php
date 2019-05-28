@@ -45,4 +45,9 @@ class PhpRedisConnector implements ConnectorInterface
             $connection->select($config['database']);
         }
     }
+
+    public function validate($connection)
+    {
+        return $connection instanceof \Redis;
+    }
 }

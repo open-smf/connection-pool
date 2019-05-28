@@ -31,4 +31,9 @@ class CoroutineMySQLConnector implements ConnectorInterface
     {
 
     }
+
+    public function validate($connection)
+    {
+        return $connection instanceof MySQL;
+    }
 }
