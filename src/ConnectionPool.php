@@ -4,6 +4,7 @@ namespace Smf\ConnectionPool;
 
 use Smf\ConnectionPool\Connectors\ConnectorInterface;
 use Swoole\Coroutine\Channel;
+use Swoole\Timer;
 
 class ConnectionPool implements ConnectionPoolInterface
 {
@@ -11,7 +12,10 @@ class ConnectionPool implements ConnectionPoolInterface
     const CHANNEL_TIMEOUT = 0.001;
 
     /**@var float The minimum interval to check the idle connections */
-    const MIN_CHECK_IDLE_INTERVAL = 10;
+    const MIN_CHECK_IDLE_INTERVAL = 5;
+
+    /**@var float The minimum interval to check the alive of connection */
+    const MIN_CHECK_ALIVE_INTERVAL = 5;
 
     /**@var string The key about the last active time of connection */
     const KEY_LAST_ACTIVE_TIME = '__lat';
@@ -35,22 +39,28 @@ class ConnectionPool implements ConnectionPoolInterface
     protected $connectionCount = 0;
 
     /**@var int The minimum number of active connections */
-    protected $minActive = 1;
+    protected $minActive;
 
     /**@var int The maximum number of active connections */
-    protected $maxActive = 1;
+    protected $maxActive;
 
     /**@var float The maximum waiting time for connection, when reached, an exception will be thrown */
-    protected $maxWaitTime = 5;
+    protected $maxWaitTime;
 
     /**@var float The maximum idle time for the connection, when reached, the connection will be removed from pool, and keep the least $minActive connections in the pool */
-    protected $maxIdleTime = 5;
+    protected $maxIdleTime;
 
-    /**@var float The interval to check idle connection */
-    protected $idleCheckInterval = 5;
+    /**@var float The interval to check the idle connection */
+    protected $idleCheckInterval;
 
-    /**@var int The timer id of balancer */
+    /**@var float The interval to check the alive of connection */
+    protected $aliveCheckInterval;
+
+    /**@var int The timer id of connection balancer */
     protected $balancerTimerId;
+
+    /**@var int The timer id of alive checker */
+    protected $checkerTimerId;
 
     /**
      * ConnectionPool constructor.
@@ -60,6 +70,7 @@ class ConnectionPool implements ConnectionPoolInterface
      * float maxWaitTime The maximum waiting time for connection, when reached, an exception will be thrown
      * float maxIdleTime The maximum idle time for the connection, when reached, the connection will be removed from pool, and keep the least $minActive connections in the pool
      * float idleCheckInterval The interval to check idle connection
+     * float aliveCheckInterval The interval to check alive connection
      * @param ConnectorInterface $connector The connector instance of ConnectorInterface
      * @param array $connectionConfig The config of connection
      */
@@ -67,12 +78,14 @@ class ConnectionPool implements ConnectionPoolInterface
     {
         $this->initialized = false;
         $this->closed = false;
-        $this->minActive = $poolConfig['minActive'] ?? 20;
+        $this->minActive = $poolConfig['minActive'] ?? 10;
         $this->maxActive = $poolConfig['maxActive'] ?? 100;
-        $this->maxWaitTime = $poolConfig['maxWaitTime'] ?? 5;
-        $this->maxIdleTime = $poolConfig['maxIdleTime'] ?? 30;
+        $this->maxWaitTime = $poolConfig['maxWaitTime'] ?? 15;
+        $this->maxIdleTime = $poolConfig['maxIdleTime'] ?? 60;
         $poolConfig['idleCheckInterval'] = $poolConfig['idleCheckInterval'] ?? 15;
+        $poolConfig['aliveCheckInterval'] = $poolConfig['aliveCheckInterval'] ?? 15;
         $this->idleCheckInterval = $poolConfig['idleCheckInterval'] >= static::MIN_CHECK_IDLE_INTERVAL ? $poolConfig['idleCheckInterval'] : static::MIN_CHECK_IDLE_INTERVAL;
+        $this->aliveCheckInterval = $poolConfig['aliveCheckInterval'] >= static::MIN_CHECK_ALIVE_INTERVAL ? $poolConfig['aliveCheckInterval'] : static::MIN_CHECK_ALIVE_INTERVAL;
         $this->connectionConfig = $connectionConfig;
         $this->connector = $connector;
     }
@@ -89,6 +102,7 @@ class ConnectionPool implements ConnectionPoolInterface
         $this->initialized = true;
         $this->pool = new Channel($this->maxActive);
         $this->balancerTimerId = $this->startBalanceTimer($this->idleCheckInterval);
+        $this->checkerTimerId = $this->startCheckAliveTimer($this->aliveCheckInterval);
         go(function () {
             for ($i = 0; $i < $this->minActive; $i++) {
                 $connection = $this->createConnection();
@@ -199,7 +213,7 @@ class ConnectionPool implements ConnectionPoolInterface
             return false;
         }
         $this->closed = true;
-        swoole_timer_clear($this->balancerTimerId);
+        Timer::clear($this->balancerTimerId);
         go(function () {
             while (true) {
                 if ($this->pool->isEmpty()) {
@@ -222,7 +236,7 @@ class ConnectionPool implements ConnectionPoolInterface
 
     protected function startBalanceTimer(float $interval)
     {
-        return swoole_timer_tick(round($interval) * 1000, function () {
+        return Timer::tick(round($interval) * 1000, function () {
             $now = time();
             $validConnections = [];
             while (true) {
@@ -251,6 +265,22 @@ class ConnectionPool implements ConnectionPoolInterface
                 $ret = $this->pool->push($validConnection, static::CHANNEL_TIMEOUT);
                 if ($ret === false) {
                     $this->removeConnection($validConnection);
+                }
+            }
+        });
+    }
+
+    protected function startCheckAliveTimer(float $interval)
+    {
+        return Timer::tick(round($interval) * 1000, function () {
+            while ($connection = $this->pool->pop()) {
+                if ($this->connector->isConnected($connection)) {
+                    $ret = $this->pool->push($connection, static::CHANNEL_TIMEOUT);
+                    if ($ret === false) {
+                        $this->removeConnection($connection);
+                    }
+                } else {
+                    $this->removeConnection($connection);
                 }
             }
         });
