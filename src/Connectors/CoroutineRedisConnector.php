@@ -41,7 +41,9 @@ class CoroutineRedisConnector implements ConnectorInterface
     {
         /**@var Redis $connection */
         if (isset($config['database'])) {
+            $connection->setDefer(true);
             $connection->select($config['database']);
+            $connection->recv();
         }
         $connection->setDefer(false);
     }
