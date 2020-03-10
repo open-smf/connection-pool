@@ -41,7 +41,9 @@ class CoroutineRedisConnector implements ConnectorInterface
     {
         /**@var Redis $connection */
         $connection->setDefer(false);
-        $connection->select($config['database'] ?? 0);
+        if (isset($config['database'])) {
+            $connection->select($config['database']);
+        }
     }
 
     public function validate($connection): bool
