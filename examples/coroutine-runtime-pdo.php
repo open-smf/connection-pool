@@ -8,7 +8,7 @@ use Smf\ConnectionPool\Connectors\PDOConnector;
 Swoole\Runtime::enableCoroutine();
 
 go(function () {
-    // All Redis connections: [10, 30]
+    // All PDO connections: [10, 30]
     $pool = new ConnectionPool(
         [
             'minActive'         => 10,
