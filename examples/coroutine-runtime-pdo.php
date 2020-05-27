@@ -2,9 +2,9 @@
 include '../vendor/autoload.php';
 
 use Smf\ConnectionPool\ConnectionPool;
-use Smf\ConnectionPool\Connectors\PhpRedisConnector;
+use Smf\ConnectionPool\Connectors\PDOConnector;
 
-// Enable coroutine for PhpRedis
+// Enable coroutine for PDO
 Swoole\Runtime::enableCoroutine();
 
 go(function () {
@@ -17,13 +17,12 @@ go(function () {
             'maxIdleTime'       => 20,
             'idleCheckInterval' => 10,
         ],
-        new PhpRedisConnector,
+        new PDOConnector,
         [
-            'host'     => '127.0.0.1',
-            'port'     => '6379',
-            'database' => 0,
-            'password' => null,
-            'timeout'  => 5,
+            'dsn'      => 'mysql:host=mysql;port=3306;dbname=test',
+            'username' => 'root',
+            'password' => 'xy123456',
+            'options'  => [],
         ]
     );
     echo "Initializing connection pool\n";
@@ -34,14 +33,13 @@ go(function () {
     });
 
     echo "Borrowing the connection from pool\n";
-    /**@var Redis $connection */
+    /**@var \PDO $connection */
     $connection = $pool->borrow();
 
-    $connection->set('test', uniqid());
-    $test = $connection->get('test');
+    $statement = $connection->query('SHOW STATUS LIKE "Threads_connected"');
 
     echo "Return the connection to pool as soon as possible\n";
     $pool->return($connection);
 
-    var_dump($test);
+    var_dump($statement->fetch(\PDO::FETCH_ASSOC));
 });

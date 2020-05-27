@@ -31,6 +31,7 @@ composer require "open-smf/connection-pool:~1.0"
 | CoroutinePostgreSQLConnector | Instance of `Swoole\Coroutine\PostgreSQL`, require configuring `Swoole` with `--enable-coroutine-postgresql`|
 | CoroutineRedisConnector | Instance of `Swoole\Coroutine\Redis` |
 | PhpRedisConnector | Instance of `Redis`, require [redis](https://pecl.php.net/package/redis) |
+| PDOConnector | Instance of `PDO`, require [PDO](https://www.php.net/manual/en/book.pdo.php) |
 | YourConnector | `YourConnector` must implement interface `ConnectorInterface`, any object can be used as a connection instance |
 
 - Basic usage
@@ -211,8 +212,8 @@ class HttpServer
     }
 }
 
-// Enable runtime coroutine for PhpRedis
-Swoole\Runtime::enableCoroutine(true);
+// Enable coroutine for PhpRedis
+Swoole\Runtime::enableCoroutine();
 $server = new HttpServer('0.0.0.0', 5200);
 $server->start();
 ```
