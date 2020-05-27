@@ -19,7 +19,7 @@ go(function () {
         ],
         new PDOConnector,
         [
-            'dsn'      => 'mysql:host=mysql;port=3306;dbname=test',
+            'dsn'      => 'mysql:host=127.0.0.1;port=3306;dbname=mysql',
             'username' => 'root',
             'password' => 'xy123456',
             'options'  => [],
