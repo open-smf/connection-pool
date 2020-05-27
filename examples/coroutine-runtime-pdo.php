@@ -22,7 +22,10 @@ go(function () {
             'dsn'      => 'mysql:host=127.0.0.1;port=3306;dbname=mysql',
             'username' => 'root',
             'password' => 'xy123456',
-            'options'  => [],
+            'options'  => [
+                \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+            ],
         ]
     );
     echo "Initializing connection pool\n";
@@ -41,5 +44,5 @@ go(function () {
     echo "Return the connection to pool as soon as possible\n";
     $pool->return($connection);
 
-    var_dump($statement->fetch(\PDO::FETCH_ASSOC));
+    var_dump($statement->fetch());
 });
