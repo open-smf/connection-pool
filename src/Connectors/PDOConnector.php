@@ -22,8 +22,7 @@ class PDOConnector implements ConnectorInterface
 
     public function isConnected($connection): bool
     {
-        /**@var \PDO $connection */
-        return $connection->getAttribute(\PDO::ATTR_SERVER_VERSION) !== null;
+        return true;
     }
 
     public function reset($connection, array $config)
