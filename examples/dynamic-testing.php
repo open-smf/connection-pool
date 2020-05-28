@@ -42,7 +42,7 @@ go(function () {
     });
 
     while (true) {
-        $count = mt_rand(1, 100);
+        $count = mt_rand(1, 45);
         echo "Query count: $count\n";
         for ($i = 0; $i < $count; $i++) {
             go(function () use ($pool) {
