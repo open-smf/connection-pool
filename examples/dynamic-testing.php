@@ -2,9 +2,8 @@
 include '../vendor/autoload.php';
 
 use Smf\ConnectionPool\ConnectionPool;
-use Smf\ConnectionPool\Connectors\CoroutineMySQLConnector;
+use Smf\ConnectionPool\Connectors\PDOConnector;
 use Swoole\Coroutine;
-use Swoole\Coroutine\MySQL;
 
 go(function () {
     // All MySQL connections: [10, 30]
@@ -16,17 +15,15 @@ go(function () {
             'maxIdleTime'       => 20,
             'idleCheckInterval' => 10,
         ],
-        new CoroutineMySQLConnector,
+        new PDOConnector,
         [
-            'host'        => '127.0.0.1',
-            'port'        => '3306',
-            'user'        => 'root',
-            'password'    => 'xy123456',
-            'database'    => 'mysql',
-            'timeout'     => 10,
-            'charset'     => 'utf8mb4',
-            'strict_type' => true,
-            'fetch_mode'  => true,
+            'dsn'      => 'mysql:host=127.0.0.1;port=3306;dbname=mysql',
+            'username' => 'root',
+            'password' => 'xy123456',
+            'options'  => [
+                \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+            ],
         ]
     );
     $pool->init();
@@ -47,16 +44,17 @@ go(function () {
         echo "Query count: $count\n";
         for ($i = 0; $i < $count; $i++) {
             go(function () use ($pool) {
-                /**@var MySQL $mysql */
-                $mysql = $pool->borrow();
-                defer(function () use ($pool, $mysql) {
-                    $pool->return($mysql);
+                /**@var \PDO $pdo */
+                $pdo = $pool->borrow();
+                defer(function () use ($pool, $pdo) {
+                    $pool->return($pdo);
                 });
-                $ret = $mysql->query('show status like \'Threads_connected\'');
-                if (!isset($ret[0]['Variable_name'])) {
+                $statement = $pdo->query('show status like \'Threads_connected\'');
+                $ret = $statement->fetch();
+                if (!isset($ret['Variable_name'])) {
                     echo "Invalid query result: \n", print_r($ret, true);
                 }
-                echo $ret[0]['Variable_name'] . ': ' . $ret[0]['Value'] . "\n";
+                echo $ret['Variable_name'] . ': ' . $ret['Value'] . "\n";
             });
         }
         Coroutine::sleep(mt_rand(1, 15));
