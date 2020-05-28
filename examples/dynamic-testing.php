@@ -5,6 +5,8 @@ use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\Connectors\PDOConnector;
 use Swoole\Coroutine;
 
+Swoole\Runtime::enableCoroutine();
+
 go(function () {
     // All MySQL connections: [10, 30]
     $pool = new ConnectionPool(
