@@ -24,7 +24,7 @@ class PDOConnector implements ConnectorInterface
     {
         /**@var \PDO $connection */
         try {
-            return !!$connection->getAttribute(\PDO::ATTR_SERVER_INFO);
+            return !!@$connection->getAttribute(\PDO::ATTR_SERVER_INFO);
         } catch (\Throwable $e) {
             return false;
         }
