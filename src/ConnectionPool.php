@@ -4,6 +4,7 @@ namespace Smf\ConnectionPool;
 
 use Smf\ConnectionPool\Connectors\ConnectorInterface;
 use Swoole\Coroutine\Channel;
+use Swoole\Coroutine;
 
 class ConnectionPool implements ConnectionPoolInterface
 {
@@ -89,7 +90,7 @@ class ConnectionPool implements ConnectionPoolInterface
         $this->initialized = true;
         $this->pool = new Channel($this->maxActive);
         $this->balancerTimerId = $this->startBalanceTimer($this->idleCheckInterval);
-        go(function () {
+        Coroutine::create(function () {
             for ($i = 0; $i < $this->minActive; $i++) {
                 $connection = $this->createConnection();
                 $ret = $this->pool->push($connection, static::CHANNEL_TIMEOUT);
@@ -200,7 +201,7 @@ class ConnectionPool implements ConnectionPoolInterface
         }
         $this->closed = true;
         swoole_timer_clear($this->balancerTimerId);
-        go(function () {
+        Coroutine::create(function () {
             while (true) {
                 if ($this->pool->isEmpty()) {
                     break;
@@ -267,7 +268,7 @@ class ConnectionPool implements ConnectionPoolInterface
     protected function removeConnection($connection)
     {
         $this->connectionCount--;
-        go(function () use ($connection) {
+        Coroutine::create(function () use ($connection) {
             try {
                 $this->connector->disconnect($connection);
             } catch (\Throwable $e) {
