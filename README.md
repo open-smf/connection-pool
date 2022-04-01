@@ -1,10 +1,10 @@
 # Connection pool
 A common connection pool based on Swoole is usually used as the database connection pool.
 
-[![Latest Version](https://img.shields.io/github/release/open-smf/connection-pool.svg)](https://github.com/open-smf/connection-pool/releases)
-[![PHP Version](https://img.shields.io/packagist/php-v/open-smf/connection-pool.svg?color=green)](https://secure.php.net)
-[![Total Downloads](https://poser.pugx.org/open-smf/connection-pool/downloads)](https://packagist.org/packages/open-smf/connection-pool)
-[![License](https://poser.pugx.org/open-smf/connection-pool/license)](LICENSE)
+[![Latest Version](https://img.shields.io/github/release/eltaline/connection-pool.svg)](https://github.com/eltaline/connection-pool/releases)
+[![PHP Version](https://img.shields.io/packagist/php-v/eltaline/connection-pool.svg?color=green)](https://secure.php.net)
+[![Total Downloads](https://poser.pugx.org/eltaline/connection-pool/downloads)](https://packagist.org/packages/eltaline/connection-pool)
+[![License](https://poser.pugx.org/eltaline/connection-pool/license)](LICENSE)
 
 ## Requirements
 
@@ -17,7 +17,7 @@ A common connection pool based on Swoole is usually used as the database connect
 > Install package via [Composer](https://getcomposer.org/).
 
 ```shell
-composer require "open-smf/connection-pool:~1.0"
+composer require "eltaline/connection-pool:~1.0"
 ```
 
 ## Usage
