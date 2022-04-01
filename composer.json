@@ -22,7 +22,7 @@
   "require": {
     "php": ">=7.0.0",
     "ext-json": "*",
-    "ext-swoole": ">=4.2.9"
+    "ext-openswoole": ">=4.9.1"
   },
   "suggest": {
     "ext-redis": "A PHP extension for Redis."
