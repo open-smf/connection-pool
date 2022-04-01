@@ -1,10 +1,10 @@
 {
-  "name": "open-smf/connection-pool",
+  "name": "eltaline/connection-pool",
   "type": "library",
   "license": "MIT",
   "support": {
-    "issues": "https://github.com/open-smf/connection-pool/issues",
-    "source": "https://github.com/open-smf/connection-pool"
+    "issues": "https://github.com/eltaline/connection-pool/issues",
+    "source": "https://github.com/eltaline/connection-pool"
   },
   "description": "A common connection pool based on Swoole is usually used as the database connection pool.",
   "keywords": [
@@ -12,7 +12,7 @@
     "connection-pool",
     "database-connection-pool"
   ],
-  "homepage": "https://github.com/open-smf/connection-pool",
+  "homepage": "https://github.com/eltaline/connection-pool",
   "authors": [
     {
       "name": "Xie Biao",
