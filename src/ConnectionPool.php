@@ -259,9 +259,9 @@ class ConnectionPool implements ConnectionPoolInterface
 
     protected function createConnection()
     {
-        $this->connectionCount++;
         $connection = $this->connector->connect($this->connectionConfig);
         $connection->{static::KEY_LAST_ACTIVE_TIME} = time();
+        $this->connectionCount++;
         return $connection;
     }
 
