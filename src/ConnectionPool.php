@@ -5,6 +5,7 @@ namespace Smf\ConnectionPool;
 use Smf\ConnectionPool\Connectors\ConnectorInterface;
 use Swoole\Coroutine\Channel;
 use Swoole\Coroutine;
+use WeakMap;
 
 class ConnectionPool implements ConnectionPoolInterface
 {
@@ -14,8 +15,8 @@ class ConnectionPool implements ConnectionPoolInterface
     /**@var float The minimum interval to check the idle connections */
     const MIN_CHECK_IDLE_INTERVAL = 10;
 
-    /**@var string The key about the last active time of connection */
-    const KEY_LAST_ACTIVE_TIME = '__lat';
+    /**@var WeakMap The last active time of connection */
+    protected $lastActiveTime;
 
     /**@var bool Whether the connection pool is initialized */
     protected $initialized;
@@ -66,6 +67,7 @@ class ConnectionPool implements ConnectionPoolInterface
      */
     public function __construct(array $poolConfig, ConnectorInterface $connector, array $connectionConfig)
     {
+        $this->lastActiveTime = new WeakMap();
         $this->initialized = false;
         $this->closed = false;
         $this->minActive = $poolConfig['minActive'] ?? 20;
@@ -161,7 +163,7 @@ class ConnectionPool implements ConnectionPoolInterface
             $this->removeConnection($connection);
             return false;
         }
-        $connection->{static::KEY_LAST_ACTIVE_TIME} = time();
+        $this->lastActiveTime[$connection] = time();
         $ret = $this->pool->push($connection, static::CHANNEL_TIMEOUT);
         if ($ret === false) {
             $this->removeConnection($connection);
@@ -240,7 +242,7 @@ class ConnectionPool implements ConnectionPoolInterface
                 if ($connection === false) {
                     continue;
                 }
-                $lastActiveTime = $connection->{static::KEY_LAST_ACTIVE_TIME} ?? 0;
+                $lastActiveTime = $this->lastActiveTime[$connection] ?? 0;
                 if ($now - $lastActiveTime < $this->maxIdleTime) {
                     $validConnections[] = $connection;
                 } else {
@@ -261,7 +263,7 @@ class ConnectionPool implements ConnectionPoolInterface
     {
         $this->connectionCount++;
         $connection = $this->connector->connect($this->connectionConfig);
-        $connection->{static::KEY_LAST_ACTIVE_TIME} = time();
+        $this->lastActiveTime[$connection] = time();
         return $connection;
     }
 
