@@ -17,7 +17,10 @@ A common connection pool based on Swoole is usually used as the database connect
 > Install package via [Composer](https://getcomposer.org/).
 
 ```shell
+# PHP 7.x
 composer require "open-smf/connection-pool:~1.0"
+# PHP 8.x
+composer require "open-smf/connection-pool:~2.0"
 ```
 
 ## Usage
